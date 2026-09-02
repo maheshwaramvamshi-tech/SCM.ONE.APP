@@ -11,6 +11,10 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzeGZwbHR4dGdyemdqbG5rZ2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2MjA0NTgsImV4cCI6MjEwMzE5NjQ1OH0.nsu_AZ40ZqdIQ2WDctChdNdCaF-cPhn8SX3QMSohAMM'; 
   
   var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // === GOOGLE DRIVE IMAGE CONFIG ===
+  const GOOGLE_DRIVE_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbxwHT6u2inlnVmdbthAi8vEbcl_J9nXRKDN6GC7oA_lq7PBCaiaMK7IPOmvVG-KHH_CDw/exec'; 
+  const GOOGLE_DRIVE_FOLDER_ID = 'SCM ONE APP Photos'; // optional for reference
 </script>
 <style>
 *{font-family:'Outfit',sans-serif;box-sizing:border-box}
@@ -103,7 +107,6 @@ html, body, button, .card, .module, .tripCard {
 .ddDropActions{display:flex;gap:8px;margin-top:8px}
 .ddPhotoBtn{flex:1;background:#111;color:white;border:none;border-radius:20px;padding:8px;font-size:12px;font-weight:700}
 
-
 /* Hide any stray single-char badges */
 body::before{content:none}
 
@@ -114,7 +117,6 @@ body::before{content:none}
 <meta name="theme-color" content="#0a0a0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SCM ONE APP 2.0">
-
 </head>
 <body>
 <div id="edgeZone"></div>
@@ -149,6 +151,7 @@ body::before{content:none}
       <div class="module" onclick="openLoadCrates()"><div><b>3. Load Crates</b></div><div>→</div></div>
       <div class="module" onclick="openRouteAssign()"><div><b>4. Route Assignment</b></div><div>→</div></div>
       <div class="module" onclick="openDriverDashboard()"><div><b>5. Driver Dashboard</b></div><div>→</div></div>
+      <div class="module" onclick="openDropWiseIndents()"><div><b>6. Drop Wise Indents</b></div><div>→</div></div>
     </div>
   </div>
   
@@ -171,7 +174,30 @@ body::before{content:none}
       </div>
       <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
     </div>
+    
     <div class="card" id="vrIndentContent">Loading...</div>
+    
+    <!-- NEW: ROUTE LOADED PROOF SECTION -->
+    <div class="card" id="vrPhotoSection">
+      <div style="font-size:11px;color:#888;margin-bottom:8px;font-weight:700">ROUTE LOADED PROOF</div>
+      
+      <!-- Capture UI -->
+      <div id="vrPhotoCaptureUI" class="hide" style="text-align:center">
+        <input type="file" id="vrPhotoInput" accept="image/*" capture="environment" class="hide" onchange="handleVrPhotoSelect(this)">
+        <button type="button" class="btnDark" id="vrPhotoBtn" onclick="document.getElementById('vrPhotoInput').click()" style="padding:10px;font-size:11px;margin-bottom:10px;width:100%">📷 Capture Photo</button>
+        <div id="vrPhotoPreview" style="font-size:10px;color:#7CFC00;margin-bottom:10px" class="hide">✓ Captured with watermark</div>
+        <button class="btnGreen" id="vrPhotoSubmitBtn" onclick="submitVrPhoto()" style="display:none;margin-top:8px">Submit Photo</button>
+        <div id="vrPhotoStatus" style="font-size:11px;color:#7CFC00;margin-top:8px"></div>
+      </div>
+
+      <!-- Submitted UI (Locked) -->
+      <div id="vrPhotoSubmittedUI" class="hide" style="text-align:center;background:#101d10;border:1px solid #7CFC00;border-radius:12px;padding:12px">
+        <div style="font-size:14px;color:#7CFC00;font-weight:700;margin-bottom:4px">✓ Submitted</div>
+        <div id="vrPhotoSubmittedText" style="font-size:11px;color:#aaa;margin-bottom:10px">By -- at --</div>
+        <button class="btnDark" id="vrPhotoViewBtn" style="padding:8px;font-size:11px;width:auto">View Photo</button>
+      </div>
+    </div>
+
     <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Routes</button></div>
   </div>
 
@@ -184,6 +210,27 @@ body::before{content:none}
       <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
     </div>
     <div id="ddDriverList">Loading drivers...</div>
+    <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Home</button></div>
+  </div>
+  <div class="wrap hide" id="dropWiseIndentPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2 style="margin:0;font-size:18px">Drop Wise Indents</h2>
+        <div class="badge" id="dwOpDate" style="margin-top:8px">--</div>
+      </div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    
+    <div class="card">
+      <label style="font-size:11px;color:#888;font-weight:700">SELECT DROP</label>
+      <select id="selDropWise" onchange="loadDropWiseData()" style="margin-top:6px;margin-bottom:0">
+        <option value="">Loading...</option>
+      </select>
+    </div>
+    
+    <!-- Render container for the selected drop's indents -->
+    <div class="card" id="dropWiseContent" style="display:none;"></div>
+    
     <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Home</button></div>
   </div>
 
@@ -395,6 +442,8 @@ var photo1Base64 = "", photo2Base64 = "";
 var currentPrevHolding = 0, currentSessionId = 0;
 var routeIndentState = { assignedRoutes: [], items: [] };
 var realTimeSubscription = null;
+var vrPhotoBase64 = "";
+const G_CHAT_WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAQA-VwAJNY/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=v1D4xN_BTRcMOCJmS0_BYyveqCg77RFgTLufJCbG7dI';
 
 function isDriverRole(role) {
   if (!role) return false;
@@ -591,6 +640,7 @@ function afterLogin() {
     document.getElementById('vehicleRouteDetailPage').classList.add('hide');
     document.getElementById('stockTxnPage').classList.add('hide');
     document.getElementById('stockTxnDetailPage').classList.add('hide');
+    document.getElementById('dropWiseIndentPage').classList.add('hide');
     navStack = [];
     initStaff();
   }
@@ -881,6 +931,16 @@ function softRefresh() {
       loadDriverDashboard();
       return;
     }
+    if (isVisible('dropWiseIndentPage')) {
+      let currentDrop = document.getElementById('selDropWise').value;
+      openDropWiseIndents(true).then(() => {
+        if (currentDrop) {
+          document.getElementById('selDropWise').value = currentDrop;
+          loadDropWiseData();
+        }
+      });
+      return;
+    }
 
     // Fallback
     if (currentUser) {
@@ -1025,6 +1085,7 @@ function backHome(fromSwipe) {
   if (!fromSwipe && navStack.length > 0) navStack.pop();
   document.getElementById('routeAssignPage').classList.add('hide');
   document.getElementById('loadCratesPage').classList.add('hide');
+  document.getElementById('dropWiseIndentPage').classList.add('hide');
   document.getElementById('staffHome').classList.remove('hide');
 }
 
@@ -1102,6 +1163,9 @@ function handleSwipeBack() {
       document.getElementById('driverDashboardPage').classList.add('hide');
       document.getElementById('stockTxnPage').classList.add('hide');
       document.getElementById('stockTxnDetailPage').classList.add('hide');
+      // NEW: Hide Drop Wise Indents when going back to Staff Home
+      document.getElementById('dropWiseIndentPage').classList.add('hide'); 
+      
       document.getElementById('staffHome').classList.remove('hide');
     } else if (prev === 'vehicleRoutesPage') {
       document.getElementById('vehicleRouteDetailPage').classList.add('hide');
@@ -1248,6 +1312,88 @@ function navigateDrop(dropName) {
   window.open('https://www.google.com/maps/search/' + encodeURIComponent(dropName), '_blank');
 }
 
+
+// --- Google Drive Uploader ---
+async function uploadToGoogleDrive(base64Data, fileName) {
+  if (!GOOGLE_DRIVE_UPLOAD_URL || GOOGLE_DRIVE_UPLOAD_URL.includes('YOUR_GOOGLE')) {
+    console.warn('Google Drive URL not set - using base64 fallback');
+    return base64Data; 
+  }
+  try {
+    var base64Pure = base64Data.split(',')[1] || base64Data;
+    var response = await fetch(GOOGLE_DRIVE_UPLOAD_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        fileName: fileName,
+        mimeType: 'image/jpeg',
+        base64Data: base64Pure,
+        folderId: GOOGLE_DRIVE_FOLDER_ID
+      })
+    });
+    var res2 = await fetch(GOOGLE_DRIVE_UPLOAD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        fileName: fileName,
+        mimeType: 'image/jpeg',
+        base64Data: base64Pure,
+        folderId: GOOGLE_DRIVE_FOLDER_ID
+      })
+    });
+    var result = await res2.json();
+    if (result && result.url) return result.url;
+    if (result && result.fileId) return 'https://drive.google.com/file/d/' + result.fileId + '/view';
+    throw new Error('No URL returned');
+  } catch (err) {
+    console.error('Drive upload failed:', err);
+    return base64Data;
+  }
+}
+
+async function uploadToGoogleDriveProper(base64Data, fileName) {
+  if (!GOOGLE_DRIVE_UPLOAD_URL || GOOGLE_DRIVE_UPLOAD_URL.includes('YOUR_GOOGLE')) {
+    return base64Data;
+  }
+  try {
+    if (!base64Data) return '';
+    var base64Pure = base64Data.split(',')[1] || base64Data;
+    var resp = await fetch(GOOGLE_DRIVE_UPLOAD_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        fileName: fileName,
+        mimeType: 'image/jpeg',
+        base64Data: base64Pure
+      })
+    });
+    var data = await resp.json();
+    if (data && data.url) return data.url;
+    if (data && data.fileId) return 'https://drive.google.com/file/d/' + data.fileId + '/view';
+    return base64Data;
+  } catch (err) {
+    console.error('Drive upload failed', err);
+    return base64Data;
+  }
+}
+
+function resetPhotoCaptureState() {
+  photo1Base64 = "";
+  photo2Base64 = "";
+  var inp1 = document.getElementById('photoInput1');
+  var inp2 = document.getElementById('photoInput2');
+  if (inp1) inp1.value = "";
+  if (inp2) inp2.value = "";
+  var btn1 = document.getElementById('photoBtn1');
+  var btn2 = document.getElementById('photoBtn2');
+  if (btn1) btn1.innerText = "📷 Photo 1 *";
+  if (btn2) btn2.innerText = "📷 Photo 2 *";
+  var p1 = document.getElementById('photoPreview1');
+  var p2 = document.getElementById('photoPreview2');
+  if (p1) p1.classList.add('hide');
+  if (p2) p2.classList.add('hide');
+}
+
 function handlePhotoSelect(input, index) {
   if (!input.files || !input.files[0]) return;
   var file = input.files[0];
@@ -1265,16 +1411,40 @@ function handlePhotoSelect(input, index) {
       canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
 
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      var compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+      var ist = getISTDate();
+      var pad = n => n < 10 ? '0'+n : ''+n;
+      var timeStr = pad(ist.getDate()) + '/' + pad(ist.getMonth()+1) + '/' + ist.getFullYear() + ' ' + pad(ist.getHours()) + ':' + pad(ist.getMinutes()) + ':' + pad(ist.getSeconds()) + ' IST';
+      var dropNameForWM = currentOpenDrop || 'SCM ONE';
+      var barHeight = 52;
+      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px Outfit, sans-serif';
+      ctx.textBaseline = 'middle';
+      var displayDrop = dropNameForWM.length > 30 ? dropNameForWM.substring(0,30) + '...' : dropNameForWM;
+      ctx.fillText(displayDrop, 10, canvas.height - 34);
+      ctx.font = '11px Outfit, sans-serif';
+      ctx.fillStyle = '#7CFC00';
+      ctx.fillText(timeStr, 10, canvas.height - 14);
+      ctx.font = '10px Outfit, sans-serif';
+      ctx.fillStyle = '#ffffff88';
+      ctx.textAlign = 'right';
+      ctx.fillText('SCM ONE APP 2.0', canvas.width - 10, canvas.height - 14);
+      ctx.textAlign = 'left';
+
+      var compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
 
       if (index === 1) {
         photo1Base64 = compressedBase64;
         document.getElementById('photoBtn1').innerText = "✓ Photo 1";
         document.getElementById('photoPreview1').classList.remove('hide');
+        document.getElementById('photoPreview1').innerText = "✓ Captured with watermark";
       } else {
         photo2Base64 = compressedBase64;
         document.getElementById('photoBtn2').innerText = "✓ Photo 2";
         document.getElementById('photoPreview2').classList.remove('hide');
+        document.getElementById('photoPreview2').innerText = "✓ Captured with watermark";
       }
     };
   };
@@ -1341,6 +1511,28 @@ async function submitDetailDelivery() {
 
   var btn = document.getElementById('detailSaveBtn');
   btn.disabled = true;
+  btn.innerText = 'Uploading photos to Drive...';
+
+  var finalImage1Url = '';
+  var finalImage2Url = '';
+  try {
+    if (photo1Base64) {
+      var fileName1 = getTodayString() + '_' + currentUser.name.replace(/\s+/g,'_') + '_' + currentTripNo.replace(/\s+/g,'_') + '_' + currentOpenDrop.replace(/\s+/g,'_') + '_1.jpg';
+      finalImage1Url = await uploadToGoogleDriveProper(photo1Base64, fileName1);
+      btn.innerText = 'Photo 1 uploaded...';
+    }
+    if (photo2Base64) {
+      var fileName2 = getTodayString() + '_' + currentUser.name.replace(/\s+/g,'_') + '_' + currentTripNo.replace(/\s+/g,'_') + '_' + currentOpenDrop.replace(/\s+/g,'_') + '_2.jpg';
+      finalImage2Url = await uploadToGoogleDriveProper(photo2Base64, fileName2);
+      btn.innerText = 'Photo 2 uploaded...';
+    }
+  } catch (e) {
+    console.error(e);
+    // fallback to base64
+    finalImage1Url = photo1Base64;
+    finalImage2Url = photo2Base64;
+  }
+
   btn.innerText = 'Submitting...';
 
   var payload = {
@@ -1358,8 +1550,8 @@ async function submitDetailDelivery() {
     holding_today: holdingToday,
     expected_trays: expected,
     variance: variance,
-    image1_url: photo1Base64,
-    image2_url: photo2Base64,
+    image1_url: finalImage1Url,
+    image2_url: finalImage2Url,
     location_link: ''
   };
 
@@ -1513,6 +1705,7 @@ async function openDelivery() {
 async function openDropDetail(dropName, isReadOnly) {
   if (navStack[navStack.length - 1] !== 'dropDetail') navStack.push('dropDetail');
   currentOpenDrop = dropName;
+  resetPhotoCaptureState();
 
   var items = currentDropData[dropName];
   var route = (items && items[0]) ? items[0].route : '';
@@ -1699,25 +1892,114 @@ async function openVehicleRoutes(isRefresh) {
   document.getElementById('loader').classList.remove('hide');
 
   try {
-    const data = await fetchAllRows('route_indents', 'route_name');
-    document.getElementById('loader').classList.add('hide');
-
     var opDate = getOpDateWithCutoff();
     document.getElementById('vrOpDate').innerText = opDate;
-    
-    var distinctRoutes = [...new Set((data || []).map(r => r.route_name).filter(Boolean))].sort();
 
-    var html = '';
-    distinctRoutes.forEach(function(r) {
-      var safeRoute = escapeHtml(r).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      html += '<div class="tripCard" onclick="openVehicleRouteDetail(\'' + safeRoute + '\')">';
-      html += '  <div class="tripTitle">' + escapeHtml(r) + '</div>';
-      html += '  <div class="tripSub">Tap to view route indents</div>';
-      html += '</div>';
+    // 1. Fetch indents, master routes, AND today's proofs
+    const [indentsRes, masterRes, proofsRes] = await Promise.all([
+      supabase.from('route_indents').select('route_name').limit(10000),
+      supabase.from('master_routes').select('route, drop, channel_type').eq('op_date', opDate).limit(10000),
+      supabase.from('route_loaded_proofs').select('*').eq('op_date', opDate).limit(10000)
+    ]);
+
+    if (indentsRes.error) throw indentsRes.error;
+    if (masterRes.error) throw masterRes.error;
+
+    // Build proof mapping to check if a route is submitted
+    const proofMap = {};
+    (proofsRes.data || []).forEach(p => {
+      proofMap[p.route_name] = p;
     });
 
-    if (!html) html = '<div class="card" style="text-align:center;color:#666">No routes found in Route Indents</div>';
+    const distinctEntities = [...new Set((indentsRes.data || []).map(r => (r.route_name || '').trim()).filter(Boolean))];
+
+    const routeToChannel = {};
+    const dropToChannel = {};
+
+    (masterRes.data || []).forEach(m => {
+      const rKey = (m.route || '').trim().toLowerCase();
+      const dKey = (m.drop || '').trim().toLowerCase();
+      const cType = (m.channel_type || '').trim();
+
+      if (cType) {
+        if (rKey) {
+          if (!routeToChannel[rKey]) routeToChannel[rKey] = new Set();
+          routeToChannel[rKey].add(cType);
+        }
+        if (dKey) {
+          if (!dropToChannel[dKey]) dropToChannel[dKey] = new Set();
+          dropToChannel[dKey].add(cType);
+        }
+      }
+    });
+
+    const grouped = {};
+    
+    distinctEntities.forEach(entity => {
+      const eKey = entity.toLowerCase();
+      let channels = new Set();
+
+      if (routeToChannel[eKey]) {
+        routeToChannel[eKey].forEach(c => channels.add(c));
+      }
+      if (dropToChannel[eKey]) {
+        dropToChannel[eKey].forEach(c => channels.add(c));
+      }
+
+      if (channels.size === 0) {
+        channels.add('Other / Unassigned');
+      }
+
+      channels.forEach(ch => {
+        if (!grouped[ch]) grouped[ch] = [];
+        grouped[ch].push(entity);
+      });
+    });
+
+    const sortedChannels = Object.keys(grouped).sort((a, b) => {
+      if (a === 'Other / Unassigned') return 1;
+      if (b === 'Other / Unassigned') return -1;
+      return a.localeCompare(b);
+    });
+
+    // 2. Render HTML with Green styling for submitted routes
+    let html = '';
+    sortedChannels.forEach(ch => {
+      const entitiesInChannel = grouped[ch].sort();
+      if (entitiesInChannel.length > 0) {
+        html += '<div style="font-weight:700;color:#7CFC00;margin:18px 0 8px;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px dashed #2a2a2a;padding-bottom:4px;">' + escapeHtml(ch) + '</div>';
+
+        entitiesInChannel.forEach(ent => {
+          const safeEnt = escapeHtml(ent).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          const proof = proofMap[ent];
+
+          if (proof) {
+            // GREEN CARD (Submitted)
+            let dt = new Date(proof.timestamp);
+            let timeStr = dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+            
+            html += '<div class="tripCard" style="background:#101d10;border:1px solid #7CFC00" onclick="openVehicleRouteDetail(\'' + safeEnt + '\')">';
+            html += '  <div style="display:flex;justify-content:space-between;align-items:flex-start">';
+            html += '    <div class="tripTitle" style="color:#7CFC00;margin:0">' + escapeHtml(ent) + '</div>';
+            html += '    <div class="badge" style="background:#7CFC00;color:black;font-weight:700">Updated</div>';
+            html += '  </div>';
+            html += '  <div class="tripSub" style="margin-top:6px;color:#aaa">By ' + escapeHtml(proof.submitted_by) + ' at ' + timeStr + '</div>';
+            html += '</div>';
+          } else {
+            // DEFAULT CARD (Pending)
+            html += '<div class="tripCard" onclick="openVehicleRouteDetail(\'' + safeEnt + '\')">';
+            html += '  <div class="tripTitle">' + escapeHtml(ent) + '</div>';
+            html += '  <div class="tripSub">Tap to view indents</div>';
+            html += '</div>';
+          }
+        });
+      }
+    });
+
+    if (!html) html = '<div class="card" style="text-align:center;color:#666">No indents found</div>';
+
     document.getElementById('vrRoutesList').innerHTML = html;
+    document.getElementById('loader').classList.add('hide');
 
   } catch (err) {
     document.getElementById('loader').classList.add('hide');
@@ -1734,8 +2016,36 @@ async function openVehicleRouteDetail(routeName) {
   document.getElementById('vrDetailTitle').innerText = routeName;
   document.getElementById('vrDetailDate').innerText = opDate;
 
-  document.getElementById('vrIndentContent').innerHTML = '<div style="text-align:center;color:#666">Loading indents...</div>';
+  // --- START NEW STATUS CHECK ---
+  document.getElementById('vrPhotoCaptureUI').classList.add('hide');
+  document.getElementById('vrPhotoSubmittedUI').classList.add('hide');
+  vrPhotoBase64 = "";
+  if (document.getElementById('vrPhotoInput')) document.getElementById('vrPhotoInput').value = "";
+  document.getElementById('vrPhotoBtn').innerText = "📷 Capture Photo";
+  document.getElementById('vrPhotoPreview').classList.add('hide');
+  document.getElementById('vrPhotoSubmitBtn').style.display = 'none';
+  document.getElementById('vrPhotoStatus').innerText = '';
 
+  const { data: proofData } = await supabase
+    .from('route_loaded_proofs')
+    .select('*')
+    .eq('route_name', routeName)
+    .eq('op_date', opDate)
+    .maybeSingle();
+
+  if (proofData) {
+    document.getElementById('vrPhotoSubmittedUI').classList.remove('hide');
+    let dt = new Date(proofData.timestamp);
+    let timeStr = dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+    document.getElementById('vrPhotoSubmittedText').innerText = 'By ' + escapeHtml(proofData.submitted_by) + ' at ' + timeStr;
+    document.getElementById('vrPhotoViewBtn').onclick = () => window.open(proofData.drive_url, '_blank');
+  } else {
+    document.getElementById('vrPhotoCaptureUI').classList.remove('hide');
+  }
+  // --- END NEW STATUS CHECK ---
+
+  document.getElementById('vrIndentContent').innerHTML = '<div style="text-align:center;color:#666">Loading indents...</div>';
+  
   const { data: rawIndentsRaw } = await supabase
     .from('route_indents')
     .select('*')
@@ -1899,7 +2209,7 @@ async function openDriverDashboard(isRefresh) {
         tableRows += '<tr><td>' + escapeHtml(tripLabel) + '</td><td>' + ld + '</td><td class="yellow">' + dr + '</td><td class="yellow">' + pk + '</td><td class="red">' + rm + '</td><td>' + doneStops + '/' + totalStops + '</td></tr>';
       });
 
-      // Expandable trip-wise drop details (all drops, pending + done)
+      // Expandable trip-wise drop details
       var expandableHtml = '';
       trips.forEach(trip => {
         var tripDrops = tripGroups[trip] || [];
@@ -1909,7 +2219,21 @@ async function openDriverDashboard(isRefresh) {
           var txn = txnByDropKey[dropKey];
           if (txn) {
             var tTime = new Date(txn.created_at||txn.timestamp).toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:false});
-            expandableHtml += '<div class="ddDrop"><div style="display:flex;justify-content:space-between;align-items:center"><div class="ddDropTitle">' + escapeHtml(routeRow.drop) + '<div style="font-size:10px;color:#666;font-weight:400">' + escapeHtml(routeRow.route||'') + '</div></div><div class="badge" style="background:#dcfce7;color:#166534;border-color:#16a34a">DONE</div></div><div class="ddDropMeta">🕒 ' + tTime + ' | D: ' + (txn.dropped_today||0) + ' | Prev: ' + (txn.prev_holding||0) + ' | P: ' + (txn.picked_today||0) + ' | H: ' + (txn.holding_today||0) + ' | V: <span style="color:' + ((txn.variance||0)===0?'#16a34a':'#dc2626') + '">' + (txn.variance||0) + '</span></div></div>';
+            
+            // Generate photo buttons or thumbnails if image URLs exist
+            var photoLinksHtml = '';
+            if (txn.image1_url || txn.image2_url) {
+              photoLinksHtml += '<div style="display:flex;gap:6px;margin-top:6px;">';
+              if (txn.image1_url) {
+                photoLinksHtml += '<a href="' + escapeHtml(txn.image1_url) + '" target="_blank" class="btnDark" style="padding:4px 8px;font-size:10px;text-align:center;text-decoration:none;display:inline-block;">📷 View Photo 1</a>';
+              }
+              if (txn.image2_url) {
+                photoLinksHtml += '<a href="' + escapeHtml(txn.image2_url) + '" target="_blank" class="btnDark" style="padding:4px 8px;font-size:10px;text-align:center;text-decoration:none;display:inline-block;">📷 View Photo 2</a>';
+              }
+              photoLinksHtml += '</div>';
+            }
+
+            expandableHtml += '<div class="ddDrop"><div style="display:flex;justify-content:space-between;align-items:center"><div class="ddDropTitle">' + escapeHtml(routeRow.drop) + '<div style="font-size:10px;color:#666;font-weight:400">' + escapeHtml(routeRow.route||'') + '</div></div><div class="badge" style="background:#dcfce7;color:#166534;border-color:#16a34a">DONE</div></div><div class="ddDropMeta">🕒 ' + tTime + ' | D: ' + (txn.dropped_today||0) + ' | Prev: ' + (txn.prev_holding||0) + ' | P: ' + (txn.picked_today||0) + ' | H: ' + (txn.holding_today||0) + ' | V: <span style="color:' + ((txn.variance||0)===0?'#16a34a':'#dc2626') + '">' + (txn.variance||0) + '</span></div>' + photoLinksHtml + '</div>';
           } else {
             expandableHtml += '<div class="ddDrop" style="border-color:#fbbf24;background:#fffbeb"><div style="display:flex;justify-content:space-between;align-items:center"><div class="ddDropTitle">' + escapeHtml(routeRow.drop) + '<div style="font-size:10px;color:#666;font-weight:400">' + escapeHtml(routeRow.route||'') + ' | ' + escapeHtml(routeRow.channel_type||'') + '</div></div><div class="badge" style="background:#fef3c7;color:#92400e;border-color:#f59e0b">PENDING</div></div><div class="ddDropMeta" style="color:#92400e">Not yet delivered</div></div>';
           }
@@ -1962,7 +2286,6 @@ function callDriver(mobile) {
 }
 
 function viewTxnPhoto(dummy, driver, drop, type) {
-  // find full txn in memory - simple alert for now, can open modal
   alert('Photo view for ' + driver + ' - ' + drop + ' - type ' + type + ' (implement modal to show base64 image)');
 }
 
@@ -2133,6 +2456,206 @@ async function submitStockTransaction() {
     btn.disabled = false;
     btn.innerText = 'Submit Stock Transaction';
     alert("Save failed: " + (err.message || err));
+  }
+}
+
+function handleVrPhotoSelect(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  
+  reader.onload = function(e) {
+    var img = new Image();
+    img.src = e.target.result;
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      var maxWidth = 800;
+      var scale = maxWidth / img.width;
+      canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
+      canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
+
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // Watermark Text
+      var ist = getISTDate();
+      var pad = n => n < 10 ? '0'+n : ''+n;
+      var timeStr = pad(ist.getDate()) + '/' + pad(ist.getMonth()+1) + '/' + ist.getFullYear() + ' ' + pad(ist.getHours()) + ':' + pad(ist.getMinutes()) + ':' + pad(ist.getSeconds()) + ' IST';
+      var routeName = document.getElementById('vrDetailTitle').innerText || 'SCM ONE';
+      
+      var barHeight = 52;
+      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px Outfit, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(routeName.substring(0,30), 10, canvas.height - 34);
+      ctx.font = '11px Outfit, sans-serif';
+      ctx.fillStyle = '#7CFC00';
+      ctx.fillText(timeStr, 10, canvas.height - 14);
+      
+      vrPhotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+      
+      // Update Capture UI
+      document.getElementById('vrPhotoBtn').innerText = "✓ Retake Photo";
+      document.getElementById('vrPhotoPreview').classList.remove('hide');
+      document.getElementById('vrPhotoSubmitBtn').style.display = 'block';
+      document.getElementById('vrPhotoStatus').innerText = '';
+    };
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitVrPhoto() {
+  if (!vrPhotoBase64) return;
+  
+  var btn = document.getElementById('vrPhotoSubmitBtn');
+  var statusElem = document.getElementById('vrPhotoStatus');
+  btn.disabled = true;
+  btn.innerText = 'Uploading to Drive...';
+  
+  var routeName = document.getElementById('vrDetailTitle').innerText;
+  var dateStr = getTodayString();
+  
+  // Format 12-hour time for Google Chat
+  var ist = getISTDate();
+  var hours = ist.getHours();
+  var ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  var mins = ist.getMinutes();
+  var timeStr = (hours < 10 ? '0'+hours : hours) + ':' + (mins < 10 ? '0'+mins : mins) + ' ' + ampm;
+  
+  var staffName = (currentUser && currentUser.name) ? currentUser.name : 'Unknown';
+  var mobile = (currentUser && currentUser.mobile_number) ? currentUser.mobile_number : 'Unknown';
+  var fileName = routeName.replace(/\s+/g, '_') + '_' + mobile + '_' + Date.now() + '.jpg';
+  
+  try {
+    // 1. Upload to Google Drive
+    var driveUrl = await uploadToGoogleDriveProper(vrPhotoBase64, fileName);
+    btn.innerText = 'Posting to Google Chat...';
+    
+    // 2. Format exact text block and Post to Webhook
+    var messageText = "📦 Vehicle Route Loaded\n" +
+                      "Date: " + dateStr + "\n" +
+                      "Route: " + routeName + " (" + mobile + ")\n" +
+                      "Time: " + timeStr + "\n" +
+                      driveUrl;
+
+    var webhookRes = await fetch(G_CHAT_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: messageText })
+    });
+    
+    if (!webhookRes.ok) throw new Error("Webhook failed");
+    btn.innerText = 'Saving Record...';
+
+    // 3. Save to Supabase to lock UI
+    var insertPayload = {
+      op_date: dateStr,
+      route_name: routeName,
+      submitted_by: staffName,
+      timestamp: getISTTimestamp(),
+      drive_url: driveUrl
+    };
+
+    const { error } = await supabase.from('route_loaded_proofs').insert([insertPayload]);
+    if (error) throw error;
+    
+    // 4. Update UI to Locked State momentarily
+    document.getElementById('vrPhotoCaptureUI').classList.add('hide');
+    document.getElementById('vrPhotoSubmittedUI').classList.remove('hide');
+    document.getElementById('vrPhotoSubmittedText').innerText = 'By ' + escapeHtml(staffName) + ' at ' + timeStr;
+    document.getElementById('vrPhotoViewBtn').onclick = () => window.open(driveUrl, '_blank');
+    
+    // 5. Auto-navigate back to the Vehicle Routes list after 1.2 seconds
+    setTimeout(() => {
+      if (navStack.length > 0 && navStack[navStack.length - 1] === 'vehicleRoutesPage') {
+        navStack.pop();
+      }
+      openVehicleRoutes(true);
+    }, 1200);
+    
+  } catch (e) {
+    console.error(e);
+    statusElem.innerText = '❌ Failed: ' + (e.message || e);
+    statusElem.style.color = '#ff6b6b';
+    btn.disabled = false;
+    btn.innerText = 'Retry Submission';
+  }
+}
+async function openDropWiseIndents(isRefresh) {
+  if (!isRefresh) { if (navStack[navStack.length - 1] !== 'staffHome') navStack.push('staffHome'); }
+  
+  // Hide other pages
+  document.getElementById('staffHome').classList.add('hide');
+  document.getElementById('routeAssignPage').classList.add('hide');
+  document.getElementById('loadCratesPage').classList.add('hide');
+  document.getElementById('vehicleRoutesPage').classList.add('hide');
+  document.getElementById('vehicleRouteDetailPage').classList.add('hide');
+  document.getElementById('stockTxnPage').classList.add('hide');
+  document.getElementById('stockTxnDetailPage').classList.add('hide');
+  document.getElementById('driverDashboardPage').classList.add('hide');
+  
+  // Show new page
+  document.getElementById('dropWiseIndentPage').classList.remove('hide');
+  document.getElementById('dwOpDate').innerText = getOpDateWithCutoff();
+  document.getElementById('dropWiseContent').style.display = 'none';
+
+  document.getElementById('loader').classList.remove('hide');
+  
+  try {
+    // Fetch unique drop names from drop_indents
+    const { data, error } = await supabase.from('drop_indents').select('drop_name').limit(10000);
+    if (error) throw error;
+    
+    // Deduplicate and sort alphabetically
+    const uniqueDrops = [...new Set((data || []).map(d => (d.drop_name || '').trim()).filter(Boolean))].sort();
+    
+    let html = '<option value="">-- Select Drop --</option>';
+    uniqueDrops.forEach(d => {
+      html += '<option value="' + escapeHtml(d) + '">' + escapeHtml(d) + '</option>';
+    });
+    
+    document.getElementById('selDropWise').innerHTML = html;
+    document.getElementById('loader').classList.add('hide');
+  } catch (err) {
+    document.getElementById('loader').classList.add('hide');
+    alert("Error loading drops: " + (err.message || err));
+  }
+}
+
+async function loadDropWiseData() {
+  const dropName = document.getElementById('selDropWise').value;
+  const container = document.getElementById('dropWiseContent');
+  
+  if (!dropName) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'block';
+  container.innerHTML = '<div style="text-align:center;color:#666">Loading indents...</div>';
+  document.getElementById('loader').classList.remove('hide');
+  
+  try {
+    // Fetch the specific indents for the selected drop
+    const { data, error } = await supabase
+      .from('drop_indents')
+      .select('*')
+      .eq('drop_name', dropName)
+      .limit(10000);
+      
+    if (error) throw error;
+    
+    // Pass data into your existing table formatter
+    await renderIndentsList(data || [], 'dropWiseContent');
+    document.getElementById('loader').classList.add('hide');
+  } catch (err) {
+    document.getElementById('loader').classList.add('hide');
+    container.innerHTML = '<div style="color:#ff6b6b;text-align:center">Error loading data.</div>';
+    console.error(err);
   }
 }
 </script>
