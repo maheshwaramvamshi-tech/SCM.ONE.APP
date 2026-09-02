@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Supabase JS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://csxfpltxtgrzgjlnkgec.supabase.co'; 
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzeGZwbHR4dGdyemdqbG5rZ2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2MjA0NTgsImV4cCI6MjEwMzE5NjQ1OH0.nsu_AZ40ZqdIQ2WDctChdNdCaF-cPhn8SX3QMSohAMM'; 
+  
+  var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+<style>
+*{font-family:'Outfit',sans-serif;box-sizing:border-box}
+html{overscroll-behavior:none}
+body{margin:0;background:#0a0a0a;color:white;min-height:100vh;overflow-x:hidden}
+.header{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#0a0a0a;z-index:20;border-bottom:1px solid #1e1e1e}
+.badge{font-size:11px;color:#aaa;background:#161616;padding:6px 10px;border-radius:20px;border:1px solid #2a2a2a}
+.iconBtn{width:36px;height:36px;border-radius:50%;background:#161616;border:1px solid #2a2a2a;color:white;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.wrap{padding:14px;max-width:520px;margin:0 auto;width:100%}
+.card{background:#161616;border:1px solid #2a2a2a;border-radius:22px;padding:18px;margin-bottom:14px}
+.module{background:#1e1e1e;border:1px solid #2a2a2a;border-radius:18px;padding:16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;cursor:pointer}
+.tripCard{background:#1e1e1e;border:1px solid #2a2a2a;border-radius:20px;padding:18px;margin-bottom:12px;cursor:pointer}
+.tripTitle{font-size:18px;font-weight:700;margin:0 0 6px}
+.tripSub{font-size:12px;color:#888;line-height:1.4}
+input,select{width:100%;background:#1e1e1e;border:1px solid #2e2e2e;border-radius:12px;padding:13px;font-size:14px;color:white;margin-bottom:10px;outline:none}
+button{width:100%;background:white;color:black;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer}
+.btnDark{background:#1e1e1e;color:white;border:1px solid #2a2a2a}
+.btnGreen{background:#7CFC00;color:black}
+.item{background:#1a1a1a;border:1px solid #252525;border-radius:14px;padding:12px;margin-bottom:8px}
+.hide{display:none!important}
+#loader{position:fixed;inset:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:12px}
+.spinner{width:28px;height:28px;border:3px solid #222;border-top:3px solid #fff;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dropRow{display:flex;gap:8px;align-items:center;background:#1a1a1a;border:1px solid #252525;border-radius:12px;padding:10px;margin-bottom:8px}
+#edgeZone{position:fixed;left:0;top:0;width:12px;height:100vh;z-index:50;pointer-events:auto;background:transparent}
+#swipeFeedback{position:fixed;left:10px;top:50%;transform:translateY(-50%) translateX(-80px);background:white;color:black;padding:8px 12px;border-radius:20px;font-size:11px;font-weight:700;z-index:100;transition:transform 0.2s;pointer-events:none;opacity:0}
+#swipeFeedback.show{transform:translateY(-50%) translateX(0);opacity:1}
+#swipeFeedback.show{transform:translateY(-50%) translateX(0)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{color:#666;text-align:left;padding:8px;border-bottom:1px solid #2a2a2a}
+td{padding:8px;border-bottom:1px solid #1e1e1e}
+.dropTitle{font-weight:700;font-size:14px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;flex:1;min-width:0}
+.dropCardTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.dropCardTop .badge{white-space:nowrap;flex-shrink:0;margin-top:2px}
+.bottomBar{position:sticky;bottom:0;background:#0a0a0a;padding:12px 0 16px;margin-top:20px;border-top:1px solid #1e1e1e;z-index:10}
+
+.crateStatGrid {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #2a2a2a;
+  text-align: center;
+}
+.crateStatBox {
+  flex: 1;
+}
+.crateStatLabel {
+  font-size: 10px;
+  color: #888;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.crateStatVal {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+html, body, button, .card, .module, .tripCard {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.wrap.hide, #loginCard.hide, #staffApp.hide, #driverApp.hide {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.driverCard{background:#e8f5e9;border:1px solid #c8e6c9;border-radius:20px;padding:14px;margin-bottom:14px;color:#000;cursor:pointer;transition:0.2s}
+.driverCard.completed{background:#bbf7bb;border:2px solid #16a34a;box-shadow:0 2px 10px rgba(22,163,74,0.2)}
+.driverCard.completed .driverName{color:#065f06}
+.driverCard.completed .ddTable th{background:#16a34a;color:white}
+.driverCard.completed .ddTable{background:white;border-radius:10px;overflow:hidden}
+.driverCard.white{background:#fff;border-color:#2a2a2a;color:#fff}
+.driverCardHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.driverName{font-size:18px;font-weight:800;color:#000}
+.driverStatus{font-size:12px;font-weight:700;text-align:right;line-height:1.2}
+.driverStatus.green{color:#1b7a1b}
+.driverStatus.orange{color:#d48800}
+.callBtn{width:38px;height:38px;border-radius:50%;background:#1b7a1b;border:2px solid #000;display:flex;align-items:center;justify-content:center;cursor:pointer;color:white;font-size:16px;flex-shrink:0;overflow:hidden}
+.ddTable{width:100%;border-collapse:collapse;margin-top:8px}
+.ddTable th{font-size:11px;color:#000;background:#ffffff88;padding:6px 4px;text-align:center;border-bottom:1px solid #bbb}
+.ddTable td{font-size:13px;font-weight:700;padding:6px 4px;text-align:center;border-bottom:1px solid #d5e8d5;color:#000}
+.ddTable td.red{color:#d32f2f}
+.ddTable td.yellow{color:#b8860b}
+.ddDrop{background:white;border-radius:12px;padding:10px;margin-top:8px;border:1px solid #c8e6c9}
+.ddDropTitle{font-size:13px;font-weight:800;color:#000}
+.ddDropMeta{font-size:11px;color:#2e7d32;margin-top:2px}
+.ddDropActions{display:flex;gap:8px;margin-top:8px}
+.ddPhotoBtn{flex:1;background:#111;color:white;border:none;border-radius:20px;padding:8px;font-size:12px;font-weight:700}
+
+
+/* Hide any stray single-char badges */
+body::before{content:none}
+
+</style>
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png?v=2">
+<link rel="apple-touch-icon" href="icon-180.png?v=2">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SCM ONE APP 2.0">
+
+</head>
+<body>
+<div id="edgeZone"></div>
+<div id="swipeFeedback">← Back</div>
+<div id="loader"><div class="spinner"></div><div style="font-size:12px;color:#666">Loading...</div></div>
+
+<div id="loginCard" class="hide" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div class="card" style="width:100%;max-width:360px">
+    <h1 style="font-size:26px;margin:0 0 6px">SCM ONE APP 2.0</h1>
+    <p style="color:#888;margin:0 0 20px;font-size:11px">Built by Team FM</p>
+    <input id="mobile" placeholder="Mobile number">
+    <input id="pin" placeholder="PIN" type="password">
+    <button id="loginBtn" onclick="doLogin()">Login</button>
+    <div id="msg" style="margin-top:10px;text-align:center;font-size:12px;color:#ff6b6b"></div>
+  </div>
+</div>
+
+<div id="staffApp" class="hide">
+  <div class="header">
+    <h1 style="font-size:14px;margin:0;line-height:1.2">SCM ONE APP 2.0<br><span style="font-size:9px;color:#888;font-weight:400;letter-spacing:0.5px">Built by Team FM</span><br><span style="font-size:11px;color:#aaa" id="staffName">--</span></h1>
+    <div style="display:flex;gap:8px">
+      <div class="badge" id="opDateStaff">--</div>
+      <div class="iconBtn" onclick="softRefresh()">↻</div>
+      <div class="iconBtn" onclick="logout()" style="background:#2a1a1a">⎋</div>
+    </div>
+  </div>
+  <div class="wrap" id="staffHome">
+    <div class="card">
+      <div style="font-size:11px;color:#666;margin-bottom:8px">MODULES</div>
+      <div class="module" onclick="openVehicleRoutes()"><div><b>1. Vehicle Routes</b></div><div>→</div></div>
+      <div class="module" onclick="openStockTransactions()"><div><b>2. Stock Transactions</b></div><div>→</div></div>
+      <div class="module" onclick="openLoadCrates()"><div><b>3. Load Crates</b></div><div>→</div></div>
+      <div class="module" onclick="openRouteAssign()"><div><b>4. Route Assignment</b></div><div>→</div></div>
+      <div class="module" onclick="openDriverDashboard()"><div><b>5. Driver Dashboard</b></div><div>→</div></div>
+    </div>
+  </div>
+  
+  <div class="wrap hide" id="vehicleRoutesPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2 style="margin:0;font-size:18px">Vehicle Routes</h2>
+        <div class="badge" id="vrOpDate" style="margin-top:8px">--</div>
+      </div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    <div id="vrRoutesList"></div>
+  </div>
+
+  <div class="wrap hide" id="vehicleRouteDetailPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2 id="vrDetailTitle" style="margin:0;font-size:18px">Route</h2>
+        <div class="badge" id="vrDetailDate" style="margin-top:8px">--</div>
+      </div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    <div class="card" id="vrIndentContent">Loading...</div>
+    <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Routes</button></div>
+  </div>
+
+  <div class="wrap hide" id="driverDashboardPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2 style="margin:0;font-size:18px">Driver Dashboard</h2>
+        <div class="badge" id="ddOpDate" style="margin-top:8px">--</div>
+      </div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    <div id="ddDriverList">Loading drivers...</div>
+    <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Home</button></div>
+  </div>
+
+  <div class="wrap hide" id="stockTxnPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2 style="margin:0;font-size:18px">Stock Transactions</h2>
+        <div class="badge" id="stOpDate" style="margin-top:8px">--</div>
+      </div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    <div id="stTypesList"></div>
+  </div>
+
+  <div class="wrap hide" id="stockTxnDetailPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2 id="stDetailType" style="margin:0;font-size:18px">Transaction</h2>
+        <div class="badge" id="stDetailDate" style="margin-top:8px">--</div>
+      </div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    <div class="card">
+      <label style="font-size:11px;color:#888">REMARKS (OPTIONAL)</label>
+      <input id="stRemarks" placeholder="Enter remarks if any...">
+      <div style="font-size:11px;color:#888;margin:10px 0 8px">PRODUCT QUANTITIES</div>
+      <div id="stProductsContainer"></div>
+      <button class="btnGreen" id="stSaveBtn" onclick="submitStockTransaction()" style="margin-top:14px">Submit Stock Transaction</button>
+    </div>
+    <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Types</button></div>
+  </div>
+
+  <div class="wrap hide" id="loadCratesPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2 style="margin:0;font-size:18px">Load Crates</h2>
+        <div class="badge" id="loadCratesDate" style="margin-top:8px">--</div>
+      </div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    <div class="card">
+      <label style="font-size:11px;color:#888">DRIVER</label>
+      <select id="selLoadDriver" onchange="loadDriverTripsForStaff()"><option value="">-- Select Driver --</option></select>
+      <label style="font-size:11px;color:#888">TRIP NO</label>
+      <select id="selLoadTrip"><option value="">-- Select Driver First --</option></select>
+      <label style="font-size:11px;color:#888">CRATES LOADED</label>
+      <input id="numLoadedCrates" type="number" placeholder="Enter crates loaded">
+      <button onclick="submitLoadCrates()" id="saveLoadCratesBtn" class="btnGreen" style="margin-top:12px">Save Loaded Crates</button>
+      <div id="loadCratesMsg" style="text-align:center;font-size:11px;margin-top:8px;color:#7CFC00"></div>
+    </div>
+  </div>
+
+  <div class="wrap hide" id="routeAssignPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div><h2 style="margin:0;font-size:18px">Route Assignment</h2><div class="badge" id="assignDate" style="margin-top:8px">--</div></div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    <div class="card">
+      <label style="font-size:11px;color:#888">ROUTE</label>
+      <select id="selRoute" onchange="loadDrops()"><option>Loading...</option></select>
+      <label style="font-size:11px;color:#888">TRIP NO</label>
+      <input id="assignTripNo" placeholder="1">
+      <label style="font-size:11px;color:#888">DRIVER</label>
+      <select id="selDriver"><option>Loading...</option></select>
+      <div id="dropsContainer" style="margin-top:12px"></div>
+      <button onclick="assignSelected()" id="assignBtn" style="margin-top:12px">Assign / Re-Assign</button>
+      <div id="assignMsg" style="text-align:center;font-size:11px;margin-top:8px;color:#7CFC00"></div>
+    </div>
+  </div>
+  <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Home</button></div>
+</div>
+
+<div id="driverApp" class="hide">
+  <div class="header">
+    <div><h1 style="font-size:14px;margin:0;line-height:1.2">SCM ONE APP 2.0<br><span style="font-size:9px;color:#888;font-weight:400;letter-spacing:0.5px">Built by Team FM</span></h1><div id="driverHello" style="font-size:11px;color:#aaa;margin-top:2px">Hello --</div></div>
+    <div style="display:flex;gap:8px">
+      <div class="badge" id="opDateDriver">--</div>
+      <div class="iconBtn" onclick="softRefreshDriver()">↻</div>
+      <div class="iconBtn" onclick="logout()" style="background:#2a1a1a">⎋</div>
+    </div>
+  </div>
+  <div class="wrap" id="driverTripList">
+    <div class="card" style="display:flex;gap:12px;text-align:center">
+      <div style="flex:1"><div id="tripCount" style="font-size:22px;font-weight:700">0</div><div style="font-size:10px;color:#888">TRIPS</div></div>
+      <div style="width:1px;background:#2a2a2a"></div>
+      <div style="flex:1"><div id="routeCount" style="font-size:22px;font-weight:700">0</div><div style="font-size:10px;color:#888">DROPS</div></div>
+    </div>
+    <div id="driverTrips"></div>
+
+    <!-- Return to Plant Module (Visible for PLANT DRIVER role) -->
+    <div id="returnToPlantCard" class="card hide">
+      <div style="font-size:16px;font-weight:700;margin-bottom:10px">Return to plant</div>
+      <div id="returnToPlantForm">
+        <label style="font-size:11px;color:#888;display:block;margin-bottom:6px">ENTER NUMBER</label>
+        <input id="rtpQtyInput" type="number" placeholder="Enter number">
+        <button id="rtpSubmitBtn" class="btnGreen" onclick="submitReturnToPlant()">Submit</button>
+      </div>
+      <div id="rtpMsg" style="text-align:center;font-size:12px;margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="wrap hide" id="driverTripDetail">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div><h2 id="tripDetailTitle" style="margin:0;font-size:22px">Trip 1</h2><div class="badge" id="tripDetailDate" style="margin-top:8px">--</div></div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    <div class="card"><div style="font-size:11px;color:#666;margin-bottom:8px">ROUTES IN THIS TRIP</div><div id="tripRoutesList"></div></div>
+    <div class="card">
+      <button class="btnDark" onclick="viewRouteIndent()" style="margin-bottom:10px">View Route Indent (For Loading)</button>
+      <button class="btnGreen" onclick="openDelivery()">Start Delivery →</button>
+    </div>
+    <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Trips</button></div>
+  </div>
+
+  <div class="wrap hide" id="routeIndentPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div><h2 style="margin:0;font-size:18px">Route Indent</h2><div class="badge" id="routeIndentHead" style="margin-top:8px">--</div></div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    <div class="card" id="assignedRoutesCard">
+      <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:700">ASSIGNED ROUTES</div>
+      <div id="assignedRoutesList" style="font-size:14px;font-weight:600;color:#7CFC00">Loading...</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <button id="btnCombR" class="btnGreen" style="flex:1" onclick="showCombR()">View Combined</button>
+      <button id="btnSepR" class="btnDark" style="flex:1" onclick="showSepR()">View Separate</button>
+    </div>
+    <div class="card" id="routeIndentContent">Loading...</div>
+    <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Trip</button></div>
+  </div>
+
+  <div class="wrap hide" id="driverDeliveryPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div><h2 id="deliveryTitle" style="margin:0;font-size:22px">Delivery</h2><div class="badge" id="deliveryHead" style="margin-top:8px">--</div></div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    <div id="deliveryDrops"></div>
+    <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Trip</button></div>
+  </div>
+
+  <div class="wrap hide" id="dropDetailPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div><h2 id="dropDetailName" style="margin:0;font-size:22px">Drop</h2><div class="badge" id="dropDetailHead" style="margin-top:8px">--</div></div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+
+    <div class="card" id="dropDetailIndent">Loading...</div>
+
+    <div class="card" id="dropDetailAction">
+      <div style="font-size:12px;font-weight:700;color:#aaa;margin-bottom:12px;letter-spacing:0.5px">CRATE TRACKING</div>
+      <div style="background:#1e1e1e;border:1px solid #2a2a2a;border-radius:14px;padding:12px;text-align:center;margin-bottom:14px">
+        <div style="font-size:10px;color:#888;letter-spacing:1px;font-weight:700">PREVIOUS HOLDING</div>
+        <div id="displayPrevHolding" style="font-size:28px;font-weight:700;color:#7CFC00;margin-top:2px">0</div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-bottom:4px">
+        <div style="flex:1">
+          <label style="font-size:10px;color:#888;font-weight:600">DROPPED TODAY <span style="color:#ff6b6b">*</span></label>
+          <input id="detailDropped" type="number" placeholder="Enter dropped" oninput="calculateCrates()">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:10px;color:#888;font-weight:600">PICKED TODAY <span style="color:#ff6b6b">*</span></label>
+          <input id="detailPicked" type="number" placeholder="Enter picked" oninput="calculateCrates()">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-bottom:4px">
+        <div style="flex:1">
+          <label style="font-size:10px;color:#888;font-weight:600">EXPECTED HOLDING</label>
+          <input id="detailExpected" type="number" readonly style="background:#141414;color:#aaa;border-color:#222">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:10px;color:#888;font-weight:600">NEW HOLDING <span style="color:#ff6b6b">*</span></label>
+          <input id="detailNewHolding" type="number" placeholder="Enter new holding" oninput="calculateCrates()">
+        </div>
+      </div>
+
+      <div id="varianceBox" style="background:#1a1a1a;border:1px solid #252525;border-radius:12px;padding:10px;text-align:center;margin-bottom:14px">
+        <span style="font-size:11px;color:#888">Variance: </span>
+        <b id="detailVariance" style="font-size:16px;color:#7CFC00">0</b>
+        <div id="varianceWarning" style="font-size:10px;color:#ff6b6b;margin-top:2px" class="hide">⚠ Expectation mismatch!</div>
+      </div>
+
+      <div style="font-size:11px;color:#888;margin-bottom:8px">PROOFS OF DELIVERY (2 PHOTOS)</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <div style="flex:1;text-align:center">
+          <input type="file" id="photoInput1" accept="image/*" capture="environment" class="hide" onchange="handlePhotoSelect(this, 1)">
+          <button type="button" class="btnDark" id="photoBtn1" onclick="document.getElementById('photoInput1').click()" style="padding:10px;font-size:11px">📷 Photo 1</button>
+          <div id="photoPreview1" style="font-size:10px;color:#7CFC00;margin-top:4px" class="hide">✓ Captured</div>
+        </div>
+        <div style="flex:1;text-align:center">
+          <input type="file" id="photoInput2" accept="image/*" capture="environment" class="hide" onchange="handlePhotoSelect(this, 2)">
+          <button type="button" class="btnDark" id="photoBtn2" onclick="document.getElementById('photoInput2').click()" style="padding:10px;font-size:11px">📷 Photo 2</button>
+          <div id="photoPreview2" style="font-size:10px;color:#7CFC00;margin-top:4px" class="hide">✓ Captured</div>
+        </div>
+      </div>
+
+      <button class="btnGreen" id="detailSaveBtn" style="margin-top:6px" onclick="submitDetailDelivery()">Submit Delivery</button>
+      <div id="detailStatus" style="text-align:center;font-size:11px;margin-top:8px;color:#7CFC00"></div>
+    </div>
+    <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Drops</button></div>
+  </div>
+</div>
+
+<script>
+var currentUser = null, allDriverRoutes = [], currentTripNo = null, navStack = [];
+var currentDropData = {}, currentOpenDrop = null, deliveryStatus = {};
+var photo1Base64 = "", photo2Base64 = "";
+var currentPrevHolding = 0, currentSessionId = 0;
+var routeIndentState = { assignedRoutes: [], items: [] };
+var realTimeSubscription = null;
+
+function isDriverRole(role) {
+  if (!role) return false;
+  var r = String(role).trim().toLowerCase();
+  return r === 'driver' || r === 'plant driver';
+}
+
+function isPlantDriverRole(role) {
+  if (!role) return false;
+  return String(role).trim().toLowerCase() === 'plant driver';
+}
+
+// Generic helper to fetch ALL rows beyond Supabase 1000 limit with bounded loop protection
+async function fetchAllRows(table, selectCols, filterFn) {
+  let all = [];
+  let from = 0;
+  const batch = 1000;
+  for (let i = 0; i < 100; i++) {
+    let q = supabase.from(table).select(selectCols).range(from, from + batch - 1);
+    if (filterFn) q = filterFn(q);
+    const { data, error } = await q;
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    all = all.concat(data);
+    if (data.length < batch) break;
+    from += batch;
+  }
+  return all;
+}
+
+function getISTDate() {
+  var now = new Date();
+  var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 5.5));
+}
+function getOpDateWithCutoff() {
+  var istTime = getISTDate();
+  if (istTime.getHours() >= 16) { istTime.setDate(istTime.getDate() + 1); }
+  var month = '' + (istTime.getMonth() + 1), day = '' + istTime.getDate(), year = istTime.getFullYear();
+  if (month.length < 2) month = '0' + month;
+  if (day.length < 2) day = '0' + day;
+  return [year, month, day].join('-');
+}
+function getTodayString() { return getOpDateWithCutoff(); }
+function getISTTimestamp() {
+  var ist = getISTDate();
+  var pad = n => n < 10 ? '0'+n : ''+n;
+  return ist.getFullYear()+'-'+pad(ist.getMonth()+1)+'-'+pad(ist.getDate())+' '+pad(ist.getHours())+':'+pad(ist.getMinutes())+':'+pad(ist.getSeconds())+'+05:30';
+}
+function getISTTimestampForTimestampWithoutTZ() {
+  var ist = getISTDate();
+  var pad = n => n < 10 ? '0'+n : ''+n;
+  return ist.getFullYear()+'-'+pad(ist.getMonth()+1)+'-'+pad(ist.getDate())+' '+pad(ist.getHours())+':'+pad(ist.getMinutes())+':'+pad(ist.getSeconds());
+}
+
+function formatTrip(t) {
+  if (!t) return 'Trip 1';
+  t = String(t).trim();
+  if (t.toLowerCase().startsWith('trip')) return 'Trip ' + t.replace(/[^0-9]/g, '');
+  if (/^\d+$/.test(t)) return 'Trip ' + t;
+  return t;
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, function(m) {
+    return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];
+  });
+}
+
+window.onload = function() {
+  setTimeout(function() {
+    var s = localStorage.getItem('scm_user');
+    if (s) {
+      try { currentUser = JSON.parse(s); afterLogin(); return; } 
+      catch(e) { localStorage.removeItem('scm_user'); }
+    }
+    showLogin();
+  }, 200);
+  initSwipeChrome();
+};
+
+function initSwipeChrome() {
+  var startX = 0, isEdge = false;
+  var edge = document.getElementById('edgeZone');
+  if (!edge) return;
+
+  edge.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    isEdge = startX < 24;
+    if (isEdge) document.getElementById('swipeFeedback').classList.add('show');
+  }, {passive: true});
+
+  edge.addEventListener('touchend', function(e) {
+    document.getElementById('swipeFeedback').classList.remove('show');
+    var endX = e.changedTouches[0].clientX;
+    if (isEdge && (endX - startX) > 70) { handleSwipeBack(); }
+    isEdge = false;
+  }, {passive: true});
+}
+
+function setupRealtime() {
+  if (realTimeSubscription) supabase.removeChannel(realTimeSubscription);
+  realTimeSubscription = supabase
+    .channel('public:transactions')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, function(payload) {
+      if (currentUser && isDriverRole(currentUser.role)) {
+        const activePage = document.querySelector('.wrap:not(.hide)');
+        if (activePage && activePage.id === 'driverDeliveryPage') {
+          openDelivery();
+        } else if (activePage && activePage.id === 'driverTripList') {
+          loadDriverDashboard();
+        }
+      }
+    })
+    .subscribe();
+}
+
+function showLogin() {
+  document.getElementById('loader').classList.add('hide');
+  document.getElementById('loginCard').classList.remove('hide');
+  document.getElementById('staffApp').classList.add('hide');
+  document.getElementById('driverApp').classList.add('hide');
+}
+
+async function doLogin() {
+  var m = document.getElementById('mobile').value.trim();
+  var p = document.getElementById('pin').value.trim();
+  if (!m || !p) { document.getElementById('msg').innerText = 'Enter mobile & pin'; return; }
+
+  document.getElementById('loginBtn').disabled = true;
+  document.getElementById('msg').innerText = 'Logging in...';
+  document.getElementById('loader').classList.remove('hide');
+
+  try {
+    const { data, error } = await supabase
+      .from('access_list')
+      .select('*')
+      .eq('mobile_number', m)
+      .eq('pin', p)
+      .maybeSingle();
+
+    document.getElementById('loginBtn').disabled = false;
+
+    if (error) throw error;
+
+    if (data) {
+      currentUser = data;
+      localStorage.setItem('scm_user', JSON.stringify(data));
+      afterLogin();
+    } else {
+      document.getElementById('loader').classList.add('hide');
+      document.getElementById('msg').innerText = 'Invalid Mobile or PIN';
+    }
+  } catch (err) {
+    document.getElementById('loader').classList.add('hide');
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('msg').innerText = 'Connection error: ' + (err.message || err);
+  }
+}
+
+function afterLogin() {
+  document.getElementById('loginCard').classList.add('hide');
+  if (!currentUser) { showLogin(); return; }
+
+  currentSessionId = Date.now();
+  var todayStr = getTodayString();
+  setupRealtime();
+  
+  if (isDriverRole(currentUser.role)) {
+    document.getElementById('driverApp').classList.remove('hide');
+    document.getElementById('staffApp').classList.add('hide');
+    document.getElementById('driverHello').innerText = 'Hello ' + currentUser.name;
+    document.getElementById('opDateDriver').innerText = todayStr;
+
+    navStack = [];
+    document.getElementById('driverTripDetail').classList.add('hide');
+    document.getElementById('driverDeliveryPage').classList.add('hide');
+    document.getElementById('routeIndentPage').classList.add('hide');
+    document.getElementById('dropDetailPage').classList.add('hide');
+    document.getElementById('driverTripList').classList.remove('hide');
+
+    loadDriverDashboard();
+  } else {
+    document.getElementById('staffApp').classList.remove('hide');
+    document.getElementById('driverApp').classList.add('hide');
+    document.getElementById('staffName').innerText = currentUser.name + ' • ' + currentUser.role;
+    document.getElementById('opDateStaff').innerText = todayStr;
+    document.getElementById('assignDate').innerText = todayStr;
+    document.getElementById('loadCratesDate').innerText = todayStr;
+    document.getElementById('staffHome').classList.remove('hide');
+    document.getElementById('routeAssignPage').classList.add('hide');
+    document.getElementById('loadCratesPage').classList.add('hide');
+    document.getElementById('vehicleRoutesPage').classList.add('hide');
+    document.getElementById('vehicleRouteDetailPage').classList.add('hide');
+    document.getElementById('stockTxnPage').classList.add('hide');
+    document.getElementById('stockTxnDetailPage').classList.add('hide');
+    navStack = [];
+    initStaff();
+  }
+}
+
+async function loadDriverDashboard() {
+  var sessionToken = currentSessionId;
+  document.getElementById('loader').classList.remove('hide');
+
+  try {
+    const opDateToday = getOpDateWithCutoff();
+
+    const [routesRes, tripCratesRes, txnsRes, rtpRes] = await Promise.all([
+      supabase.from('master_routes').select('*').eq('driver', currentUser.name).eq('op_date', opDateToday).limit(10000),
+      supabase.from('trip_crates').select('*').eq('driver_name', currentUser.name).eq('op_date', opDateToday).limit(10000),
+      supabase.from('transactions').select('*').eq('driver_name', currentUser.name).eq('op_date', opDateToday).limit(10000),
+      isPlantDriverRole(currentUser.role) 
+        ? supabase.from('return_to_plant').select('*').eq('driver_name', currentUser.name).eq('op_date', opDateToday).maybeSingle()
+        : Promise.resolve({ data: null, error: null })
+    ]);
+
+    if (sessionToken !== currentSessionId) return;
+
+    document.getElementById('loader').classList.add('hide');
+
+    if (routesRes.error) throw routesRes.error;
+
+    allDriverRoutes = routesRes.data || [];
+    var tripCratesData = tripCratesRes.data || [];
+    var txnsData = txnsRes.data || [];
+
+    var loadedMap = {};
+    tripCratesData.forEach(function(tc) {
+      if (tc.trip_no) loadedMap[formatTrip(tc.trip_no)] = Number(tc.loaded_crates || 0);
+    });
+
+    var droppedMap = {}, pickedMap = {};
+    txnsData.forEach(function(tx) {
+      var tNo = formatTrip(tx.trip_no || 'Trip 1');
+      droppedMap[tNo] = (droppedMap[tNo] || 0) + Number(tx.dropped_today || 0);
+      pickedMap[tNo] = (pickedMap[tNo] || 0) + Number(tx.picked_today || 0);
+    });
+
+    var tripGroups = {};
+    allDriverRoutes.forEach(function(r) {
+      var t = formatTrip(r.trip_no || 'Trip 1');
+      if (!tripGroups[t]) tripGroups[t] = [];
+      tripGroups[t].push(r);
+    });
+
+    document.getElementById('tripCount').innerText = Object.keys(tripGroups).length;
+    document.getElementById('routeCount').innerText = allDriverRoutes.length;
+
+    var html = '';
+    for (var trip in tripGroups) {
+      var drops = tripGroups[trip];
+      var routeSet = [...new Set(drops.map(function(d){ return d.route; }))];
+
+      var L = loadedMap[trip] !== undefined ? loadedMap[trip] : 0;
+      var D = droppedMap[trip] !== undefined ? droppedMap[trip] : 0;
+      var P = pickedMap[trip] !== undefined ? pickedMap[trip] : 0;
+      var V = L - D;
+
+      html += '<div class="tripCard" onclick="openTrip(\'' + trip.replace(/'/g,"\\'") + '\')">';
+      html += '  <div class="tripTitle">' + escapeHtml(trip) + '</div>';
+      html += '  <div class="tripSub">' + routeSet.length + ' Routes • ' + drops.length + ' Drops<br>' + escapeHtml(routeSet.join(', ')) + '</div>';
+      html += '  <div class="crateStatGrid">';
+      html += '    <div class="crateStatBox"><div class="crateStatLabel">L</div><div class="crateStatVal" style="color:#7CFC00">' + L + '</div></div>';
+      html += '    <div class="crateStatBox"><div class="crateStatLabel">D</div><div class="crateStatVal" style="color:#00ffcc">' + D + '</div></div>';
+      html += '    <div class="crateStatBox"><div class="crateStatLabel">P</div><div class="crateStatVal" style="color:#ffaa00">' + P + '</div></div>';
+      html += '    <div class="crateStatBox"><div class="crateStatLabel">V</div><div class="crateStatVal" style="color:' + (V < 0 ? '#ff6b6b' : '#ffffff') + '">' + V + '</div></div>';
+      html += '  </div>';
+      html += '</div>';
+    }
+    if (!html) html = '<div class="card" style="text-align:center;color:#666">No trips assigned for today</div>';
+    document.getElementById('driverTrips').innerHTML = html;
+
+    // Handle Return to Plant Card for PLANT DRIVER role
+    var rtpCard = document.getElementById('returnToPlantCard');
+    if (isPlantDriverRole(currentUser.role)) {
+      rtpCard.classList.remove('hide');
+      var rtpData = rtpRes ? rtpRes.data : null;
+      var rtpInput = document.getElementById('rtpQtyInput');
+      var rtpBtn = document.getElementById('rtpSubmitBtn');
+      var rtpMsg = document.getElementById('rtpMsg');
+
+      if (rtpData) {
+        // Already submitted for this operational day
+        rtpInput.value = rtpData.qty !== undefined ? rtpData.qty : (rtpData.count || 0);
+        rtpInput.disabled = true;
+        rtpBtn.disabled = true;
+        rtpBtn.className = 'btnDark';
+        rtpBtn.innerText = 'Submitted';
+        rtpMsg.innerText = '✓ Return to plant submitted for today (' + (rtpData.qty !== undefined ? rtpData.qty : rtpData.count) + '). Locked until next operational day.';
+        rtpMsg.style.color = '#7CFC00';
+      } else {
+        // Not yet submitted for this operational day
+        rtpInput.value = '';
+        rtpInput.disabled = false;
+        rtpBtn.disabled = false;
+        rtpBtn.className = 'btnGreen';
+        rtpBtn.innerText = 'Submit';
+        rtpMsg.innerText = '';
+      }
+    } else {
+      rtpCard.classList.add('hide');
+    }
+
+  } catch (err) {
+    if (sessionToken !== currentSessionId) return;
+    document.getElementById('loader').classList.add('hide');
+    alert("Dashboard load failed: " + (err.message || err));
+  }
+}
+
+async function submitReturnToPlant() {
+  if (!currentUser || !isPlantDriverRole(currentUser.role)) return;
+
+  var valRaw = document.getElementById('rtpQtyInput').value.trim();
+  if (valRaw === "" || isNaN(valRaw) || Number(valRaw) < 0) {
+    alert("Please enter a valid number");
+    return;
+  }
+
+  var btn = document.getElementById('rtpSubmitBtn');
+  btn.disabled = true;
+  btn.innerText = 'Submitting...';
+
+  var opDate = getOpDateWithCutoff();
+  var qtyVal = Number(valRaw);
+
+  try {
+    // Check if entry already exists for this operational day
+    const { data: existing } = await supabase
+      .from('return_to_plant')
+      .select('id')
+      .eq('driver_name', currentUser.name)
+      .eq('op_date', opDate)
+      .maybeSingle();
+
+    if (existing) {
+      alert("Submission already exists for today's operational day.");
+      loadDriverDashboard();
+      return;
+    }
+
+    const { error } = await supabase.from('return_to_plant').insert([{
+      op_date: opDate,
+      driver_name: currentUser.name,
+      qty: qtyVal,
+      entered_by: currentUser.name,
+      timestamp: getISTTimestamp()
+    }]);
+
+    if (error) throw error;
+
+    document.getElementById('rtpQtyInput').disabled = true;
+    btn.className = 'btnDark';
+    btn.innerText = 'Submitted';
+    document.getElementById('rtpMsg').innerText = '✓ Return to plant submitted (' + qtyVal + ')';
+    document.getElementById('rtpMsg').style.color = '#7CFC00';
+
+    if (navigator.vibrate) navigator.vibrate(50);
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerText = 'Submit';
+    alert("Submission failed: " + (err.message || err));
+  }
+}
+
+function logout() {
+  if (realTimeSubscription) supabase.removeChannel(realTimeSubscription);
+  currentSessionId = Date.now();
+  localStorage.removeItem('scm_user');
+  currentUser = null;
+  allDriverRoutes = [];
+  currentTripNo = null;
+  navStack = [];
+  currentDropData = {};
+  currentOpenDrop = null;
+  deliveryStatus = {};
+  photo1Base64 = "";
+  photo2Base64 = "";
+  currentPrevHolding = 0;
+
+  document.getElementById('mobile').value = '';
+  document.getElementById('pin').value = '';
+  document.getElementById('msg').innerText = 'Logged out successfully.';
+
+  var dynamicContainers = ['driverTrips', 'tripRoutesList', 'deliveryDrops', 'dropsContainer', 'routeIndentContent'];
+  dynamicContainers.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+
+  var sections = document.querySelectorAll('.wrap, #staffApp, #driverApp');
+  sections.forEach(function(el) { el.classList.add('hide'); });
+
+  document.getElementById('loader').classList.add('hide');
+  document.getElementById('loginCard').classList.remove('hide');
+}
+
+function softRefresh() {
+  try {
+    var opDateNow = getOpDateWithCutoff();
+    var el;
+    el = document.getElementById('opDateStaff'); if (el) el.innerText = opDateNow;
+    el = document.getElementById('assignDate'); if (el) el.innerText = opDateNow;
+    el = document.getElementById('loadCratesDate'); if (el) el.innerText = opDateNow;
+    el = document.getElementById('opDateDriver'); if (el) el.innerText = opDateNow;
+    el = document.getElementById('vrOpDate'); if (el) el.innerText = opDateNow;
+    el = document.getElementById('stOpDate'); if (el) el.innerText = opDateNow;
+    el = document.getElementById('ddOpDate'); if (el) el.innerText = opDateNow;
+
+    // Helper to check if element is visible
+    function isVisible(id) {
+      var e = document.getElementById(id);
+      return e && !e.classList.contains('hide');
+    }
+
+    // Staff modules
+    if (isVisible('driverDashboardPage')) {
+      openDriverDashboard(true);
+      return;
+    }
+    if (isVisible('vehicleRouteDetailPage')) {
+      var rName = document.getElementById('vrDetailTitle').innerText;
+      if (rName && rName !== 'Route') openVehicleRouteDetail(rName); else openVehicleRoutes(true);
+      return;
+    }
+    if (isVisible('vehicleRoutesPage')) {
+      openVehicleRoutes(true);
+      return;
+    }
+    if (isVisible('stockTxnDetailPage')) {
+      if (currentSelectedStType) openStockTxnDetail(currentSelectedStType); else openStockTransactions(true);
+      return;
+    }
+    if (isVisible('stockTxnPage')) {
+      openStockTransactions(true);
+      return;
+    }
+    if (isVisible('loadCratesPage')) {
+      // keep selections but reload drivers
+      initStaff();
+      var drv = document.getElementById('selLoadDriver').value;
+      if (drv) loadDriverTripsForStaff();
+      return;
+    }
+    if (isVisible('routeAssignPage')) {
+      initStaff();
+      // if route selected, reload its drops
+      setTimeout(function(){
+        var sel = document.getElementById('selRoute');
+        if (sel && sel.value) loadDrops();
+      }, 300);
+      return;
+    }
+    if (isVisible('staffHome')) {
+      initStaff();
+      return;
+    }
+
+    // Driver modules
+    if (isVisible('dropDetailPage')) {
+      var dName = currentOpenDrop;
+      if (dName) {
+        var isRO = document.getElementById('detailSaveBtn').disabled;
+        openDropDetail(dName, isRO);
+      } else {
+        openDelivery();
+      }
+      return;
+    }
+    if (isVisible('routeIndentPage')) {
+      viewRouteIndent();
+      return;
+    }
+    if (isVisible('driverDeliveryPage')) {
+      openDelivery();
+      return;
+    }
+    if (isVisible('driverTripDetail')) {
+      if (currentTripNo) openTrip(currentTripNo); else loadDriverDashboard();
+      return;
+    }
+    if (isVisible('driverTripList')) {
+      loadDriverDashboard();
+      return;
+    }
+
+    // Fallback
+    if (currentUser) {
+      if (isDriverRole(currentUser.role)) loadDriverDashboard();
+      else initStaff();
+    }
+  } catch(e) {
+    console.error('softRefresh error', e);
+    // ultimate fallback
+    if (currentUser && isDriverRole(currentUser.role)) loadDriverDashboard(); else initStaff();
+  }
+}
+function softRefreshDriver() { softRefresh(); }
+
+async function initStaff() {
+  document.getElementById('loader').classList.remove('hide');
+  try {
+    const { data: routesData } = await supabase.from('master_routes').select('route');
+    const { data: driversData } = await supabase.from('access_list').select('name, role');
+
+    document.getElementById('loader').classList.add('hide');
+
+    var driverList = (driversData || []).filter(x => isDriverRole(x.role));
+
+    var routes = [...new Set((routesData || []).map(r => r.route).filter(Boolean))];
+    var html = '<option value="">-- Select Route --</option>';
+    routes.forEach(r => { html += '<option value="' + escapeHtml(r) + '">' + escapeHtml(r) + '</option>'; });
+    document.getElementById('selRoute').innerHTML = html;
+
+    var dHtml = '<option value="">-- Select Driver --</option>';
+    driverList.forEach(x => { dHtml += '<option value="' + escapeHtml(x.name) + '">' + escapeHtml(x.name) + '</option>'; });
+    document.getElementById('selDriver').innerHTML = dHtml;
+    document.getElementById('selLoadDriver').innerHTML = dHtml;
+
+  } catch(err) {
+    document.getElementById('loader').classList.add('hide');
+  }
+}
+
+function openRouteAssign(isRefresh) {
+  if (!isRefresh) { if (navStack[navStack.length - 1] !== 'staffHome') navStack.push('staffHome'); }
+  document.getElementById('staffHome').classList.add('hide');
+  document.getElementById('routeAssignPage').classList.remove('hide');
+  initStaff();
+}
+
+function openLoadCrates(isRefresh) {
+  if (!isRefresh) { if (navStack[navStack.length - 1] !== 'staffHome') navStack.push('staffHome'); }
+  document.getElementById('staffHome').classList.add('hide');
+  document.getElementById('routeAssignPage').classList.add('hide');
+  document.getElementById('loadCratesPage').classList.remove('hide');
+  document.getElementById('loadCratesDate').innerText = getOpDateWithCutoff();
+  document.getElementById('loadCratesMsg').innerText = '';
+  document.getElementById('numLoadedCrates').value = '';
+  initStaff();
+}
+
+async function loadDriverTripsForStaff() {
+  var driver = document.getElementById('selLoadDriver').value;
+  var selTrip = document.getElementById('selLoadTrip');
+  if (!driver) {
+    selTrip.innerHTML = '<option value="">-- Select Driver First --</option>';
+    return;
+  }
+
+  document.getElementById('loader').classList.remove('hide');
+  try {
+    const opDate = getOpDateWithCutoff();
+    const { data: routes } = await supabase
+      .from('master_routes')
+      .select('trip_no')
+      .eq('driver', driver)
+      .eq('op_date', opDate);
+
+    document.getElementById('loader').classList.add('hide');
+
+    var trips = [...new Set((routes || []).map(r => formatTrip(r.trip_no || 'Trip 1')))].sort();
+    
+    if (trips.length === 0) {
+      selTrip.innerHTML = '<option value="">No trips assigned today</option>';
+      return;
+    }
+
+    var html = '<option value="">-- Select Trip --</option>';
+    trips.forEach(t => { html += '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>'; });
+    selTrip.innerHTML = html;
+  } catch (err) {
+    document.getElementById('loader').classList.add('hide');
+    alert("Error loading driver trips: " + (err.message || err));
+  }
+}
+
+async function submitLoadCrates() {
+  var driver = document.getElementById('selLoadDriver').value;
+  var trip = document.getElementById('selLoadTrip').value;
+  var cratesRaw = document.getElementById('numLoadedCrates').value.trim();
+
+  if (!driver) { alert("Please select a driver"); return; }
+  if (!trip) { alert("Please select a trip"); return; }
+  if (cratesRaw === "" || isNaN(cratesRaw) || Number(cratesRaw) < 0) {
+    alert("Please enter a valid crates loaded number"); return;
+  }
+
+  var btn = document.getElementById('saveLoadCratesBtn');
+  btn.disabled = true;
+  btn.innerText = 'Saving...';
+
+  var opDate = getOpDateWithCutoff();
+  var cratesLoaded = Number(cratesRaw);
+
+  try {
+    await supabase.from('trip_crates')
+      .delete()
+      .eq('op_date', opDate)
+      .eq('driver_name', driver)
+      .eq('trip_no', trip);
+
+    const { error } = await supabase.from('trip_crates').insert([{
+      op_date: opDate,
+      driver_name: driver,
+      trip_no: trip,
+      loaded_crates: cratesLoaded,
+      entered_by: currentUser.name,
+      timestamp: getISTTimestamp()
+    }]);
+
+    btn.disabled = false;
+    btn.innerText = 'Save Loaded Crates';
+
+    if (error) throw error;
+
+    document.getElementById('loadCratesMsg').innerText = '✓ ' + cratesLoaded + ' crates loaded saved for ' + driver + ' (' + trip + ')';
+    document.getElementById('numLoadedCrates').value = '';
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerText = 'Save Loaded Crates';
+    alert("Failed to save loaded crates: " + (err.message || err));
+  }
+}
+
+function backHome(fromSwipe) {
+  if (!fromSwipe && navStack.length > 0) navStack.pop();
+  document.getElementById('routeAssignPage').classList.add('hide');
+  document.getElementById('loadCratesPage').classList.add('hide');
+  document.getElementById('staffHome').classList.remove('hide');
+}
+
+async function loadDrops() {
+  var sel = document.getElementById('selRoute').value;
+  if (!sel) return;
+  document.getElementById('loader').classList.remove('hide');
+
+  var opDateLD = getOpDateWithCutoff();
+  const { data: list } = await supabase.from('master_routes').select('*').eq('route', sel).eq('op_date', opDateLD).limit(10000);
+  document.getElementById('loader').classList.add('hide');
+
+  var html = '<div style="font-size:11px;color:#888;margin-bottom:6px">' + (list || []).length + ' drops</div>';
+  (list || []).forEach(r => {
+    var tripLabel = formatTrip(r.trip_no || 'Trip 1');
+    html += '<div class="dropRow"><input type="checkbox" class="dropCheck" data-route="' + escapeHtml(r.route) + '" data-drop="' + escapeHtml(r.drop) + '" checked style="width:18px"><div class="dropName">' + escapeHtml(r.drop) + '<br><span style="font-size:10px;color:' + (r.driver ? '#7CFC00' : '#666') + '">' + escapeHtml(r.driver || 'No driver') + ' | ' + escapeHtml(tripLabel) + '</span></div></div>';
+  });
+  document.getElementById('dropsContainer').innerHTML = html;
+}
+
+async function assignSelected() {
+  var driver = document.getElementById('selDriver').value;
+  var tripRaw = document.getElementById('assignTripNo').value || '1';
+  var trip = formatTrip(tripRaw);
+  if (!driver) { alert('Select driver'); return; }
+
+  var checks = document.querySelectorAll('.dropCheck:checked');
+  if (checks.length === 0) { alert('Select drop'); return; }
+
+  document.getElementById('assignBtn').disabled = true;
+  document.getElementById('assignBtn').innerText = 'Updating...';
+
+  var opDateAssign = getOpDateWithCutoff();
+  for (let c of checks) {
+    await supabase.from('master_routes')
+      .update({ driver: driver, trip_no: trip })
+      .eq('route', c.dataset.route)
+      .eq('drop', c.dataset.drop)
+      .eq('op_date', opDateAssign);
+  }
+
+  document.getElementById('assignBtn').disabled = false;
+  document.getElementById('assignBtn').innerText = 'Assign to ' + trip;
+  document.getElementById('assignMsg').innerText = 'Updated ' + checks.length + ' drops as ' + trip;
+  loadDrops();
+}
+
+function openTrip(tripNo) {
+  if (navStack[navStack.length - 1] !== 'tripList') navStack.push('tripList');
+  currentTripNo = tripNo;
+  var drops = allDriverRoutes.filter(r => formatTrip(r.trip_no || 'Trip 1') === tripNo);
+  document.getElementById('driverTripList').classList.add('hide');
+  document.getElementById('driverTripDetail').classList.remove('hide');
+  document.getElementById('tripDetailTitle').innerText = tripNo;
+
+  var routeSet = {};
+  drops.forEach(d => { if (!routeSet[d.route]) routeSet[d.route] = []; routeSet[d.route].push(d); });
+  var html = '';
+  for (var rt in routeSet) {
+    html += '<div class="item"><b>' + escapeHtml(rt) + '</b><br><span style="font-size:11px;color:#888">' + routeSet[rt].length + ' drops in ' + escapeHtml(tripNo) + '</span></div>';
+  }
+  document.getElementById('tripRoutesList').innerHTML = html;
+}
+
+function handleSwipeBack() {
+  if (navStack.length === 0) { if (navigator.vibrate) navigator.vibrate(30); return; }
+  var prev = navStack.pop();
+  
+  if (currentUser && !isDriverRole(currentUser.role)) {
+    if (prev === 'staffHome') {
+      document.getElementById('routeAssignPage').classList.add('hide');
+      document.getElementById('loadCratesPage').classList.add('hide');
+      document.getElementById('vehicleRoutesPage').classList.add('hide');
+      document.getElementById('vehicleRouteDetailPage').classList.add('hide');
+      document.getElementById('driverDashboardPage').classList.add('hide');
+      document.getElementById('stockTxnPage').classList.add('hide');
+      document.getElementById('stockTxnDetailPage').classList.add('hide');
+      document.getElementById('staffHome').classList.remove('hide');
+    } else if (prev === 'vehicleRoutesPage') {
+      document.getElementById('vehicleRouteDetailPage').classList.add('hide');
+      document.getElementById('vehicleRoutesPage').classList.remove('hide');
+    } else if (prev === 'driverDashboardPage') {
+      document.getElementById('driverDashboardPage').classList.add('hide');
+      document.getElementById('staffHome').classList.remove('hide');
+    } else if (prev === 'stockTxnPage') {
+      document.getElementById('stockTxnDetailPage').classList.add('hide');
+      document.getElementById('stockTxnPage').classList.remove('hide');
+      openStockTransactions();
+    } else {
+      backHome(true);
+    }
+  } else {
+    if (prev === 'tripList') backToTrips(true);
+    else if (prev === 'tripDetail') backToTripDetail(true);
+    else if (prev === 'delivery') backToDelivery(true);
+    else if (prev === 'routeIndent') backToTripDetail(true);
+    else if (prev === 'dropDetail') backToDelivery(true);
+  }
+  
+  if (navigator.vibrate) navigator.vibrate(20);
+}
+
+function backToTrips(fromSwipe) {
+  if (!fromSwipe && navStack.length > 0) navStack.pop();
+  document.getElementById('driverTripDetail').classList.add('hide');
+  document.getElementById('driverDeliveryPage').classList.add('hide');
+  document.getElementById('routeIndentPage').classList.add('hide');
+  document.getElementById('dropDetailPage').classList.add('hide');
+  document.getElementById('driverTripList').classList.remove('hide');
+}
+
+function backToTripDetail(fromSwipe) {
+  if (!fromSwipe && navStack.length > 0) navStack.pop();
+  document.getElementById('driverDeliveryPage').classList.add('hide');
+  document.getElementById('routeIndentPage').classList.add('hide');
+  document.getElementById('dropDetailPage').classList.add('hide');
+  document.getElementById('driverTripList').classList.add('hide');
+  document.getElementById('driverTripDetail').classList.remove('hide');
+}
+
+function backToDelivery(fromSwipe) {
+  if (!fromSwipe && navStack.length > 0) navStack.pop();
+  document.getElementById('dropDetailPage').classList.add('hide');
+  document.getElementById('driverTripDetail').classList.add('hide');
+  document.getElementById('routeIndentPage').classList.add('hide');
+  document.getElementById('driverTripList').classList.add('hide');
+  document.getElementById('driverDeliveryPage').classList.remove('hide');
+}
+
+function backToTripDetailFromSub() {
+  document.getElementById('routeIndentPage').classList.add('hide');
+  document.getElementById('driverDeliveryPage').classList.add('hide');
+  document.getElementById('dropDetailPage').classList.add('hide');
+  document.getElementById('driverTripDetail').classList.remove('hide');
+}
+
+async function viewRouteIndent() {
+  if (!currentTripNo) { alert("No trip selected"); return; }
+  if (navStack[navStack.length - 1] !== 'tripDetail') navStack.push('tripDetail');
+
+  document.getElementById('driverDeliveryPage').classList.add('hide');
+  document.getElementById('driverTripDetail').classList.add('hide');
+  document.getElementById('routeIndentPage').classList.remove('hide');
+  document.getElementById('routeIndentHead').innerText = currentTripNo;
+
+  const dropsInTrip = allDriverRoutes.filter(r => formatTrip(r.trip_no || 'Trip 1') === currentTripNo);
+  const assignedRoutes = [...new Set(dropsInTrip.map(r => r.route))];
+  document.getElementById('assignedRoutesList').innerText = assignedRoutes.join(', ') || 'None';
+
+  const { data: rawIndents } = await supabase
+    .from('route_indents')
+    .select('*').limit(10000)
+    .in('route_name', assignedRoutes);
+
+  const preAgg = {};
+  (rawIndents || []).forEach(r => {
+    const k = `${r.route_name}||${r.item_name}`;
+    if (!preAgg[k]) preAgg[k] = { ...r, quantity: 0 };
+    preAgg[k].quantity += Number(r.quantity || 0);
+  });
+  routeIndentState = { assignedRoutes: assignedRoutes, items: Object.values(preAgg) };
+  showCombR();
+}
+
+async function showCombR() {
+  document.getElementById('btnCombR').className = 'btnGreen';
+  document.getElementById('btnSepR').className = 'btnDark';
+  
+  if (!routeIndentState.items.length) {
+    document.getElementById('routeIndentContent').innerHTML = '<div style="font-size:14px;color:#666;text-align:center;padding:12px">No combined indents found.</div>';
+    return;
+  }
+  
+  const totals = {};
+  routeIndentState.items.forEach(i => {
+    totals[i.item_name] = (totals[i.item_name] || 0) + Number(i.quantity || 0);
+  });
+
+  const combinedPayload = Object.keys(totals).map(itemName => ({
+    item_name: itemName,
+    quantity: totals[itemName]
+  }));
+
+  await renderIndentsList(combinedPayload, 'routeIndentContent');
+}
+
+async function showSepR() {
+  document.getElementById('btnSepR').className = 'btnGreen';
+  document.getElementById('btnCombR').className = 'btnDark';
+
+  if (!routeIndentState.items.length) {
+    document.getElementById('routeIndentContent').innerHTML = '<div style="font-size:14px;color:#666;text-align:center;padding:12px">No route indents found.</div>';
+    return;
+  }
+
+  const container = document.getElementById('routeIndentContent');
+  container.innerHTML = '';
+
+  for (const route of routeIndentState.assignedRoutes) {
+    let routeItems = routeIndentState.items.filter(i => i.route_name === route);
+    const m = {};
+    routeItems.forEach(i => {
+      const k = i.item_name;
+      if (!m[k]) m[k] = { ...i, quantity: 0 };
+      m[k].quantity += Number(i.quantity || 0);
+    });
+    routeItems = Object.values(m);
+    
+    if (routeItems.length > 0) {
+      const sectionDiv = document.createElement('div');
+      sectionDiv.style.marginBottom = '20px';
+      sectionDiv.innerHTML = `<div style="font-weight:700;color:#7CFC00;margin:10px 0 4px;font-size:16px;">${escapeHtml(route)}</div><div id="route-section-${escapeHtml(route)}"></div>`;
+      container.appendChild(sectionDiv);
+
+      await renderIndentsList(routeItems, `route-section-${escapeHtml(route)}`);
+    }
+  }
+}
+
+function navigateDrop(dropName) {
+  window.open('https://www.google.com/maps/search/' + encodeURIComponent(dropName), '_blank');
+}
+
+function handlePhotoSelect(input, index) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+
+  reader.onload = function(e) {
+    var img = new Image();
+    img.src = e.target.result;
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      var maxWidth = 800;
+      var scale = maxWidth / img.width;
+      canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
+      canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
+
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      var compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+      if (index === 1) {
+        photo1Base64 = compressedBase64;
+        document.getElementById('photoBtn1').innerText = "✓ Photo 1";
+        document.getElementById('photoPreview1').classList.remove('hide');
+      } else {
+        photo2Base64 = compressedBase64;
+        document.getElementById('photoBtn2').innerText = "✓ Photo 2";
+        document.getElementById('photoPreview2').classList.remove('hide');
+      }
+    };
+  };
+  reader.readAsDataURL(file);
+}
+
+function calculateCrates() {
+  var droppedVal = document.getElementById('detailDropped').value;
+  var pickedVal = document.getElementById('detailPicked').value;
+  var newHoldingVal = document.getElementById('detailNewHolding').value;
+
+  var prev = currentPrevHolding;
+  var dropped = droppedVal === "" ? 0 : Number(droppedVal);
+  var picked = pickedVal === "" ? 0 : Number(pickedVal);
+
+  var expected = prev + dropped - picked;
+  document.getElementById('detailExpected').value = expected;
+
+  var varElem = document.getElementById('detailVariance');
+  var warnElem = document.getElementById('varianceWarning');
+
+  if (newHoldingVal !== "") {
+    var newHolding = Number(newHoldingVal);
+    var variance = expected - newHolding;
+    varElem.innerText = variance;
+
+    if (variance !== 0) {
+      varElem.style.color = '#ff6b6b';
+      warnElem.classList.remove('hide');
+    } else {
+      varElem.style.color = '#7CFC00';
+      warnElem.classList.add('hide');
+    }
+  } else {
+    varElem.innerText = "0";
+    varElem.style.color = '#7CFC00';
+    warnElem.classList.add('hide');
+  }
+}
+
+async function submitDetailDelivery() {
+  if (!currentOpenDrop) return;
+
+  var droppedRaw = document.getElementById('detailDropped').value.trim();
+  var pickedRaw = document.getElementById('detailPicked').value.trim();
+  var newHoldingRaw = document.getElementById('detailNewHolding').value.trim();
+
+  if (droppedRaw === "" || pickedRaw === "" || newHoldingRaw === "") {
+    alert("Please fill in all required fields marked with * (Dropped, Picked, and New Holding).");
+    return;
+  }
+
+  var items = currentDropData[currentOpenDrop];
+  var route = items ? items[0].route : '';
+  var channelType = items ? items[0].channel_type : '';
+  var mapLink = items ? items[0].map_link : '';
+
+  var prev = currentPrevHolding;
+  var dropped = Number(droppedRaw);
+  var picked = Number(pickedRaw);
+  var expected = Number(document.getElementById('detailExpected').value) || 0;
+  var holdingToday = Number(newHoldingRaw);
+  var variance = expected - holdingToday;
+
+  var btn = document.getElementById('detailSaveBtn');
+  btn.disabled = true;
+  btn.innerText = 'Submitting...';
+
+  var payload = {
+    op_date: getTodayString(),
+    created_at: getISTTimestampForTimestampWithoutTZ(),
+    driver_name: currentUser.name,
+    trip_no: currentTripNo,
+    route_name: route,
+    drop_name: currentOpenDrop,
+    channel_type: channelType,
+    map_link: mapLink,
+    prev_holding: prev,
+    dropped_today: dropped,
+    picked_today: picked,
+    holding_today: holdingToday,
+    expected_trays: expected,
+    variance: variance,
+    image1_url: photo1Base64,
+    image2_url: photo2Base64,
+    location_link: ''
+  };
+
+  const { error } = await supabase.from('transactions').insert([payload]);
+
+  if (!error) {
+    deliveryStatus[currentOpenDrop] = payload;
+    btn.innerText = '✓ Submitted';
+    document.getElementById('detailStatus').innerText = 'Transaction saved successfully';
+    if (navigator.vibrate) navigator.vibrate(50);
+    setTimeout(function() {
+      backToTripDetailFromSub();
+      openDelivery();
+    }, 800);
+  } else {
+    btn.disabled = false;
+    btn.innerText = 'Retry Submission';
+    alert("Submission Error: " + error.message);
+  }
+}
+
+async function noIndentDrop(dropName) {
+  if (!confirm('Mark ' + dropName + ' as No Indent?')) return;
+  var items = currentDropData[dropName];
+  var route = items ? items[0].route : '';
+  var channelType = items ? items[0].channel_type : '';
+  var mapLink = items ? items[0].map_link : '';
+
+  var payload = {
+    op_date: getTodayString(),
+    created_at: getISTTimestampForTimestampWithoutTZ(),
+    driver_name: currentUser.name,
+    trip_no: currentTripNo,
+    route_name: route,
+    drop_name: dropName,
+    channel_type: channelType,
+    map_link: mapLink,
+    prev_holding: 0,
+    dropped_today: 0,
+    picked_today: 0,
+    holding_today: 0,
+    expected_trays: 0,
+    variance: 0,
+    image1_url: '',
+    image2_url: '',
+    location_link: 'NO_INDENT'
+  };
+
+  const { error } = await supabase.from('transactions').insert([payload]);
+  if (!error) {
+    deliveryStatus[dropName] = payload;
+    openDelivery();
+  }
+}
+
+async function openDelivery() {
+  if (navStack[navStack.length - 1] !== 'tripDetail') navStack.push('tripDetail');
+  document.getElementById('driverTripDetail').classList.add('hide');
+  document.getElementById('driverDeliveryPage').classList.remove('hide');
+  document.getElementById('deliveryHead').innerText = currentTripNo || 'Current Trip';
+
+  const containerEl = document.getElementById('deliveryDrops');
+  containerEl.innerHTML = '<div class="card" style="text-align:center;color:#666">Loading drops...</div>';
+
+  var todayStr = getTodayString();
+
+  const { data: statusList } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('driver_name', currentUser.name)
+    .eq('op_date', todayStr);
+
+  deliveryStatus = {};
+  (statusList || []).forEach(function(s) {
+    if (s && s.drop_name) deliveryStatus[s.drop_name] = s;
+  });
+
+  var formattedTargetTrip = formatTrip(currentTripNo);
+  var matchingDrops = allDriverRoutes.filter(function(r) {
+    return formatTrip(r.trip_no || 'Trip 1') === formattedTargetTrip;
+  });
+
+  if (matchingDrops.length === 0) {
+    containerEl.innerHTML = '<div class="card" style="text-align:center">No drops assigned to you for trip: ' + escapeHtml(currentTripNo) + '</div>';
+    return;
+  }
+
+  currentDropData = {};
+  matchingDrops.forEach(function(r) {
+    var dropName = (r.drop || '').trim();
+    if (!dropName) return;
+    if (!currentDropData[dropName]) currentDropData[dropName] = [];
+    currentDropData[dropName].push({ 
+      route: r.route, 
+      tripNo: r.trip_no, 
+      driver: r.driver, 
+      channel_type: r.channel_type || '',
+      map_link: r.map_link || '',
+      qty: 1 
+    });
+  });
+
+  var sortedDrops = Object.keys(currentDropData).sort(function(a, b) {
+    var aDone = !!deliveryStatus[a];
+    var bDone = !!deliveryStatus[b];
+    if (aDone && !bDone) return 1;
+    if (!aDone && bDone) return -1;
+    return a.localeCompare(b);
+  });
+
+  var html = '';
+  sortedDrops.forEach(function(dropName) {
+    var items = currentDropData[dropName] || [];
+    var route = items[0].route || '';
+    var txn = deliveryStatus[dropName];
+    var isDone = !!txn;
+    var safeDrop = escapeHtml(dropName).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+    var dropItem = items[0] || {};
+    var navUrl = dropItem.map_link ? dropItem.map_link : 'https://www.google.com/maps/search/' + encodeURIComponent(dropName);
+
+    if (isDone) {
+      html += '<div class="card" style="border:1px solid #7CFC00;background:#101d10">';
+      html += '  <div class="dropCardTop">';
+      html += '    <div style="min-width:0;flex:1"><div class="dropTitle" style="color:#7CFC00">✓ ' + escapeHtml(dropName) + '</div><span style="font-size:11px;color:#aaa">' + escapeHtml(route) + '</span></div>';
+      html += '    <div class="badge" style="background:#7CFC00;color:black;font-weight:700">Delivered</div>';
+      html += '  </div>';
+      html += '  <div style="display:flex;gap:8px;margin-top:12px">';
+      html += '    <button class="btnDark" style="flex:1" onclick="openDropDetail(\'' + safeDrop + '\', true)">View Details</button>';
+      html += '    <button class="btnDark" style="width:auto;padding:0 14px" onclick="window.open(\'' + navUrl + '\', \'_blank\')">Navigate</button>';
+      html += '  </div>';
+      html += '</div>';
+    } else {
+      html += '<div class="card">';
+      html += '  <div class="dropCardTop">';
+      html += '    <div style="min-width:0;flex:1"><div class="dropTitle">' + escapeHtml(dropName) + '</div><span style="font-size:11px;color:#888">' + escapeHtml(route) + '</span></div>';
+      html += '    <div class="badge">Pending</div>';
+      html += '  </div>';
+      html += '  <div style="display:flex;gap:8px;margin-top:12px">';
+      html += '    <button class="btnGreen" style="flex:1" onclick="openDropDetail(\'' + safeDrop + '\', false)">Open</button>';
+      html += '    <button class="btnDark" style="flex:1" onclick="noIndentDrop(\'' + safeDrop + '\')">No Indent</button>';
+      html += '    <button class="btnDark" style="flex:1" onclick="window.open(\'' + navUrl + '\', \'_blank\')">Navigate</button>';
+      html += '  </div>';
+      html += '</div>';
+    }
+  });
+
+  containerEl.innerHTML = html;
+}
+
+async function openDropDetail(dropName, isReadOnly) {
+  if (navStack[navStack.length - 1] !== 'dropDetail') navStack.push('dropDetail');
+  currentOpenDrop = dropName;
+
+  var items = currentDropData[dropName];
+  var route = (items && items[0]) ? items[0].route : '';
+  var txn = deliveryStatus[dropName];
+
+  document.getElementById('driverDeliveryPage').classList.add('hide');
+  document.getElementById('dropDetailPage').classList.remove('hide');
+  document.getElementById('dropDetailName').innerText = dropName + (isReadOnly ? ' (View Only)' : '');
+  document.getElementById('dropDetailHead').innerText = (route ? route + ' • ' : '') + (currentTripNo || '');
+
+  const { data: dropIndents } = await supabase
+    .from('drop_indents')
+    .select('*')
+    .eq('drop_name', dropName);
+  await renderIndentsList(dropIndents || [], 'dropDetailIndent');
+
+  var dropIn = document.getElementById('detailDropped');
+  var pickIn = document.getElementById('detailPicked');
+  var newIn  = document.getElementById('detailNewHolding');
+  var saveBtn = document.getElementById('detailSaveBtn');
+
+  if (isReadOnly && txn) {
+    currentPrevHolding = txn.prev_holding || 0;
+    document.getElementById('displayPrevHolding').innerText = currentPrevHolding;
+    dropIn.value = txn.dropped_today || 0;
+    pickIn.value = txn.picked_today || 0;
+    newIn.value = txn.holding_today || 0;
+    dropIn.disabled = true; pickIn.disabled = true; newIn.disabled = true;
+
+    calculateCrates();
+    saveBtn.innerText = '✓ Already Submitted Today';
+    saveBtn.disabled = true;
+    saveBtn.className = 'btnDark';
+  } else {
+    dropIn.disabled = false; pickIn.disabled = false; newIn.disabled = false;
+    dropIn.value = ""; pickIn.value = ""; newIn.value = "";
+    document.getElementById('detailExpected').value = "";
+    document.getElementById('detailVariance').innerText = "0";
+
+    const { data: lastTxn } = await supabase
+      .from('transactions')
+      .select('holding_today')
+      .eq('drop_name', dropName)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    currentPrevHolding = lastTxn ? (lastTxn.holding_today || 0) : 0;
+    document.getElementById('displayPrevHolding').innerText = currentPrevHolding;
+    calculateCrates();
+
+    saveBtn.innerText = 'Submit Delivery';
+    saveBtn.disabled = false;
+    saveBtn.className = 'btnGreen';
+    document.getElementById('detailStatus').innerText = '';
+  }
+}
+
+function formatTrayCapacity(qty, qtyPerTray) {
+  if (!qtyPerTray || qtyPerTray <= 0) return '-';
+  
+  const fullTrays = Math.floor(qty / qtyPerTray);
+  const loosePacks = qty % qtyPerTray;
+
+  if (fullTrays === 0) {
+    return '-'; 
+  } else if (loosePacks === 0) {
+    return `${fullTrays} Tray`; 
+  } else {
+    return `${fullTrays} Tray + ${loosePacks}`; 
+  }
+}
+
+async function renderIndentsList(rawIndents, containerId) {
+  const aggregatedMap = {};
+  (rawIndents || []).forEach(r => {
+    const aggKey = r.route_name ? `${r.route_name}||${r.item_name}` : (r.drop_name ? `${r.drop_name}||${r.item_name}` : r.item_name);
+    if (!aggregatedMap[aggKey]) {
+      aggregatedMap[aggKey] = { ...r, quantity: 0 };
+    }
+    aggregatedMap[aggKey].quantity += Number(r.quantity || 0);
+  });
+  rawIndents = Object.values(aggregatedMap);
+
+  const { data: productsMaster } = await supabase
+    .from('products_master')
+    .select('name, qty_per_tray, product_type, seq_number');
+
+  const masterMap = {};
+  if (productsMaster) {
+    productsMaster.forEach(p => { masterMap[p.name] = p; });
+  }
+
+  const processedData = rawIndents.map(item => {
+    const meta = masterMap[item.item_name] || {};
+    return {
+      ...item,
+      product_type: meta.product_type || 'Product',
+      seq_number: meta.seq_number ?? 999,
+      qty_per_tray: meta.qty_per_tray || 0
+    };
+  });
+
+  processedData.sort((a, b) => a.seq_number - b.seq_number);
+
+  const milkItems = processedData.filter(i => i.product_type === 'Milk');
+  const productItems = processedData.filter(i => i.product_type !== 'Milk');
+
+  let totalUnits = 0;
+  let totalFullTrays = 0;
+
+  processedData.forEach(item => {
+    const qty = Number(item.quantity || 0);
+    const perTray = Number(item.qty_per_tray || 0);
+    totalUnits += qty;
+    if (perTray > 0) {
+      totalFullTrays += Math.floor(qty / perTray);
+    }
+  });
+
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+
+  function generateSectionHTML(title, items) {
+    if (items.length === 0) return '';
+    
+    let html = `
+      <div style="margin-top: 15px;">
+        <h3 style="color: #fff; background-color: #333; padding: 6px 12px; margin: 0; font-size: 14px; text-transform: uppercase; text-align: center;">
+          ${title}
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+          <thead>
+            <tr style="background: #1e1e1e;">
+              <th style="padding: 8px; border: 1px solid #ffffff; color: #aaa; text-align: center;">Product</th>
+              <th style="padding: 8px; border: 1px solid #ffffff; color: #aaa; text-align: center; width: 60px;">Qty</th>
+              <th style="padding: 8px; border: 1px solid #ffffff; color: #aaa; text-align: center; width: 110px;">Tray</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    items.forEach(item => {
+      const trayDisplay = formatTrayCapacity(item.quantity, item.qty_per_tray);
+      html += `
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ffffff; color: #fff; font-weight: 600; text-align: center;">${escapeHtml(item.item_name)}</td>
+          <td style="padding: 10px; border: 1px solid #ffffff; color: #00ffcc; font-weight: bold; text-align: center;">${item.quantity}</td>
+          <td style="padding: 10px; border: 1px solid #ffffff; color: #aaa; text-align: center;">${trayDisplay}</td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table></div>`;
+    return html;
+  }
+
+  let summaryHTML = `
+    <div style="display:flex; gap:10px; margin-bottom:12px; text-align:center;">
+      <div style="flex:1; background:#1a1a1a; padding:10px; border-radius:12px; border:1px solid #252525;">
+        <div style="font-size:18px; font-weight:700; color:#7CFC00;">${totalFullTrays}</div>
+        <div style="font-size:10px; color:#888;">FULL TRAYS</div>
+      </div>
+      <div style="flex:1; background:#1a1a1a; padding:10px; border-radius:12px; border:1px solid #252525;">
+        <div style="font-size:18px; font-weight:700; color:#00ffcc;">${totalUnits}</div>
+        <div style="font-size:10px; color:#888;">TOTAL UNITS</div>
+      </div>
+    </div>
+  `;
+
+  let contentHTML = generateSectionHTML('Milk', milkItems) + generateSectionHTML('Product', productItems);
+
+  container.innerHTML = contentHTML ? summaryHTML + contentHTML : '<p style="color: #888; padding: 10px; text-align: center;">No indents found.</p>';
+}
+
+async function openVehicleRoutes(isRefresh) {
+  if (!isRefresh) { if (navStack[navStack.length - 1] !== 'staffHome') navStack.push('staffHome'); }
+  document.getElementById('staffHome').classList.add('hide');
+  document.getElementById('routeAssignPage').classList.add('hide');
+  document.getElementById('loadCratesPage').classList.add('hide');
+  document.getElementById('vehicleRouteDetailPage').classList.add('hide');
+  document.getElementById('vehicleRoutesPage').classList.remove('hide');
+
+  document.getElementById('loader').classList.remove('hide');
+
+  try {
+    const data = await fetchAllRows('route_indents', 'route_name');
+    document.getElementById('loader').classList.add('hide');
+
+    var opDate = getOpDateWithCutoff();
+    document.getElementById('vrOpDate').innerText = opDate;
+    
+    var distinctRoutes = [...new Set((data || []).map(r => r.route_name).filter(Boolean))].sort();
+
+    var html = '';
+    distinctRoutes.forEach(function(r) {
+      var safeRoute = escapeHtml(r).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      html += '<div class="tripCard" onclick="openVehicleRouteDetail(\'' + safeRoute + '\')">';
+      html += '  <div class="tripTitle">' + escapeHtml(r) + '</div>';
+      html += '  <div class="tripSub">Tap to view route indents</div>';
+      html += '</div>';
+    });
+
+    if (!html) html = '<div class="card" style="text-align:center;color:#666">No routes found in Route Indents</div>';
+    document.getElementById('vrRoutesList').innerHTML = html;
+
+  } catch (err) {
+    document.getElementById('loader').classList.add('hide');
+    alert("Error loading vehicle routes: " + (err.message || err));
+  }
+}
+
+async function openVehicleRouteDetail(routeName) {
+  if (navStack[navStack.length - 1] !== 'vehicleRoutesPage') navStack.push('vehicleRoutesPage');
+  document.getElementById('vehicleRoutesPage').classList.add('hide');
+  document.getElementById('vehicleRouteDetailPage').classList.remove('hide');
+
+  var opDate = document.getElementById('vrOpDate').innerText;
+  document.getElementById('vrDetailTitle').innerText = routeName;
+  document.getElementById('vrDetailDate').innerText = opDate;
+
+  document.getElementById('vrIndentContent').innerHTML = '<div style="text-align:center;color:#666">Loading indents...</div>';
+
+  const { data: rawIndentsRaw } = await supabase
+    .from('route_indents')
+    .select('*')
+    .eq('route_name', routeName)
+    .limit(10000);
+
+  const staffMap = {};
+  (rawIndentsRaw || []).forEach(r => {
+    const k = r.item_name;
+    if (!staffMap[k]) staffMap[k] = { ...r, quantity: 0 };
+    staffMap[k].quantity += Number(r.quantity || 0);
+  });
+  const rawIndents = Object.values(staffMap);
+
+  await renderIndentsList(rawIndents || [], 'vrIndentContent');
+}
+
+var stockTxnTypes = [
+  "Return to Nizampet",
+  "Return to Plant Fresh Milk",
+  "Leakages Return to Plant",
+  "Police",
+  "GHMC",
+  "Extra Products Given to DC",
+  "Adjustments to EAST Zone"
+];
+
+
+async function openDriverDashboard(isRefresh) {
+  if (!isRefresh) { if (navStack[navStack.length - 1] !== 'staffHome') navStack.push('staffHome'); }
+  document.getElementById('staffHome').classList.add('hide');
+  document.getElementById('vehicleRoutesPage').classList.add('hide');
+  document.getElementById('vehicleRouteDetailPage').classList.add('hide');
+  document.getElementById('stockTxnPage').classList.add('hide');
+  document.getElementById('stockTxnDetailPage').classList.add('hide');
+  document.getElementById('loadCratesPage').classList.add('hide');
+  document.getElementById('routeAssignPage').classList.add('hide');
+  document.getElementById('driverDashboardPage').classList.remove('hide');
+  var opDate = getOpDateWithCutoff();
+  document.getElementById('ddOpDate').innerText = opDate;
+  document.getElementById('ddDriverList').innerHTML = '<div class="card" style="text-align:center;color:#888">Loading...</div>';
+  document.getElementById('loader').classList.remove('hide');
+  try {
+    const [driversRes, routesRes, txnsRes, cratesRes, rtpRes] = await Promise.all([
+      supabase.from('access_list').select('name, mobile_number, role').limit(1000),
+      supabase.from('master_routes').select('*').eq('op_date', opDate).limit(10000),
+      supabase.from('transactions').select('*').eq('op_date', opDate).limit(10000),
+      supabase.from('trip_crates').select('*').eq('op_date', opDate).limit(10000),
+      supabase.from('return_to_plant').select('*').eq('op_date', opDate).limit(10000)
+    ]);
+    document.getElementById('loader').classList.add('hide');
+    var allDrivers = (driversRes.data || []);
+    var driverMapInfo = {};
+    allDrivers.forEach(d => { driverMapInfo[d.name] = d; });
+
+    var routes = routesRes.data || [];
+    var txns = txnsRes.data || [];
+    var crates = cratesRes.data || [];
+    var rtps = rtpRes.data || [];
+
+    // Only drivers with routes assigned today
+    var assignedDriverNames = [...new Set(routes.map(r => r.driver).filter(Boolean))];
+    var drivers = assignedDriverNames.map(name => driverMapInfo[name] || {name:name, mobile_number:'', role:'driver'}).sort((a,b)=>a.name.localeCompare(b.name));
+
+    // maps
+    var cratesMap = {};
+    crates.forEach(c => {
+      var key = c.driver_name + '||' + formatTrip(c.trip_no || 'Trip 1');
+      cratesMap[key] = Number(c.loaded_crates || 0);
+    });
+    var rtpMap = {};
+    rtps.forEach(r => { rtpMap[r.driver_name] = r; });
+
+    var driverGroups = {};
+    routes.forEach(r => {
+      if (!driverGroups[r.driver]) driverGroups[r.driver] = [];
+      driverGroups[r.driver].push(r);
+    });
+
+    var txnByDriver = {};
+    var txnByDriverTrip = {};
+    var txnByDropKey = {}; // driver||trip||drop -> txn
+    var lastTxnByDriver = {};
+    txns.forEach(t => {
+      if (!txnByDriver[t.driver_name]) txnByDriver[t.driver_name] = [];
+      txnByDriver[t.driver_name].push(t);
+      var trip = formatTrip(t.trip_no || 'Trip 1');
+      var tripKey = t.driver_name + '||' + trip;
+      if (!txnByDriverTrip[tripKey]) txnByDriverTrip[tripKey] = [];
+      txnByDriverTrip[tripKey].push(t);
+      var dropKey = t.driver_name + '||' + trip + '||' + (t.drop_name||'');
+      txnByDropKey[dropKey] = t;
+      var ts = new Date(t.created_at || t.timestamp).getTime() || 0;
+      if (!lastTxnByDriver[t.driver_name] || ts > lastTxnByDriver[t.driver_name].ts) {
+        lastTxnByDriver[t.driver_name] = { ts: ts, raw: t };
+      }
+    });
+
+    var html = '';
+    drivers.forEach((drv, idx) => {
+      var drvRoutes = driverGroups[drv.name] || [];
+      var drvTxns = txnByDriver[drv.name] || [];
+      var tripGroups = {};
+      drvRoutes.forEach(r => {
+        var trip = formatTrip(r.trip_no || 'Trip 1');
+        if (!tripGroups[trip]) tripGroups[trip] = [];
+        tripGroups[trip].push(r);
+      });
+      var trips = Object.keys(tripGroups).sort();
+
+      var totalDrops = drvRoutes.length;
+      var doneDrops = drvTxns.length;
+      var isCompleted = totalDrops > 0 && doneDrops >= totalDrops;
+      var hasRTP = !!rtpMap[drv.name];
+      var isPlantDriver = isPlantDriverRole(drv.role);
+      var last = lastTxnByDriver[drv.name];
+
+      var timeDisplay = '';
+      if (last && last.raw) {
+        var dt = new Date(last.raw.created_at || last.raw.timestamp);
+        timeDisplay = dt.toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:false});
+      }
+
+      var statusText = '';
+      var statusClass = 'green';
+      if (hasRTP && isCompleted) {
+        statusText = 'Route Completed at ' + timeDisplay + '<br>Return to Plant Updated';
+        statusClass = 'green';
+      } else if (isCompleted) {
+        statusText = 'Route Completed at ' + timeDisplay;
+        if (isPlantDriver && !hasRTP) {
+          statusText += '<br><span style="color:#d32f2f">Return to Plant Pending</span>';
+        } else if (isPlantDriver && hasRTP) {
+          statusText += '<br>Return to Plant Updated';
+        }
+        statusClass = 'green';
+      } else if (last) {
+        statusText = 'Last Drop Updated at ' + timeDisplay;
+        if (isPlantDriver) {
+          statusText += '<br><span style="color:' + (hasRTP ? '#1b7a1b' : '#d32f2f') + '">Return to Plant: ' + (hasRTP ? 'Updated (' + rtpMap[drv.name].qty + ')' : 'Pending') + '</span>';
+        }
+        statusClass = 'orange';
+      } else {
+        statusText = 'No drops updated';
+        if (isPlantDriver) statusText += '<br><span style="color:#d32f2f">Return to Plant: Pending</span>';
+        statusClass = 'orange';
+      }
+
+      // Trip table
+      var tableRows = '';
+      trips.forEach(trip => {
+        var tripLabel = trip.replace('Trip ','T');
+        var key = drv.name + '||' + trip;
+        var ld = cratesMap[key] !== undefined ? cratesMap[key] : 0;
+        var tTxns = txnByDriverTrip[key] || [];
+        var dr = 0, pk = 0;
+        tTxns.forEach(x => { dr += Number(x.dropped_today||0); pk += Number(x.picked_today||0); });
+        var rm = ld - dr;
+        var totalStops = tripGroups[trip] ? tripGroups[trip].length : 0;
+        var doneStops = tTxns.length;
+        tableRows += '<tr><td>' + escapeHtml(tripLabel) + '</td><td>' + ld + '</td><td class="yellow">' + dr + '</td><td class="yellow">' + pk + '</td><td class="red">' + rm + '</td><td>' + doneStops + '/' + totalStops + '</td></tr>';
+      });
+
+      // Expandable trip-wise drop details (all drops, pending + done)
+      var expandableHtml = '';
+      trips.forEach(trip => {
+        var tripDrops = tripGroups[trip] || [];
+        expandableHtml += '<div style="margin-top:12px;background:#f8faf8;border-radius:12px;padding:8px;border:1px dashed #c8e6c9"><div style="font-weight:800;font-size:14px;color:#1b7a1b;margin-bottom:6px">' + escapeHtml(trip) + ' - ' + tripDrops.length + ' drops</div>';
+        tripDrops.forEach(routeRow => {
+          var dropKey = drv.name + '||' + trip + '||' + routeRow.drop;
+          var txn = txnByDropKey[dropKey];
+          if (txn) {
+            var tTime = new Date(txn.created_at||txn.timestamp).toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:false});
+            expandableHtml += '<div class="ddDrop"><div style="display:flex;justify-content:space-between;align-items:center"><div class="ddDropTitle">' + escapeHtml(routeRow.drop) + '<div style="font-size:10px;color:#666;font-weight:400">' + escapeHtml(routeRow.route||'') + '</div></div><div class="badge" style="background:#dcfce7;color:#166534;border-color:#16a34a">DONE</div></div><div class="ddDropMeta">🕒 ' + tTime + ' | D: ' + (txn.dropped_today||0) + ' | Prev: ' + (txn.prev_holding||0) + ' | P: ' + (txn.picked_today||0) + ' | H: ' + (txn.holding_today||0) + ' | V: <span style="color:' + ((txn.variance||0)===0?'#16a34a':'#dc2626') + '">' + (txn.variance||0) + '</span></div></div>';
+          } else {
+            expandableHtml += '<div class="ddDrop" style="border-color:#fbbf24;background:#fffbeb"><div style="display:flex;justify-content:space-between;align-items:center"><div class="ddDropTitle">' + escapeHtml(routeRow.drop) + '<div style="font-size:10px;color:#666;font-weight:400">' + escapeHtml(routeRow.route||'') + ' | ' + escapeHtml(routeRow.channel_type||'') + '</div></div><div class="badge" style="background:#fef3c7;color:#92400e;border-color:#f59e0b">PENDING</div></div><div class="ddDropMeta" style="color:#92400e">Not yet delivered</div></div>';
+          }
+        });
+        expandableHtml += '</div>';
+      });
+
+      // RTP card for plant drivers
+      if (isPlantDriver) {
+        var rtpInfo = rtpMap[drv.name];
+        if (rtpInfo) {
+          var rtpTime = new Date(rtpInfo.timestamp||rtpInfo.created_at).toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:false});
+          expandableHtml += '<div style="margin-top:10px;background:#e0f2f1;border-radius:12px;padding:10px;border:1px solid #80cbc4"><div style="font-weight:800;font-size:13px;color:#00695c">Return to Plant: ' + rtpInfo.qty + ' crates at ' + rtpTime + '</div><div style="font-size:11px;color:#004d40;margin-top:2px">✓ Updated for today</div></div>';
+        } else {
+          expandableHtml += '<div style="margin-top:10px;background:#ffebee;border-radius:12px;padding:10px;border:1px solid #ef9a9a"><div style="font-weight:800;font-size:13px;color:#c62828">Return to Plant: Pending</div><div style="font-size:11px;color:#b71c1c;margin-top:2px">Not yet updated by driver</div></div>';
+        }
+      }
+
+      var safeId = 'drvExp_' + idx;
+      var cardClass = isCompleted ? 'driverCard completed' : 'driverCard';
+      html += '<div class="' + cardClass + '" onclick="toggleDriverExpand(\'' + safeId + '\')" style="' + (isCompleted ? '' : 'background:#fff;border:1px solid #e5e7eb') + '">';
+      html += '  <div class="driverCardHeader" style="cursor:pointer">';
+      html += '    <div style="display:flex;align-items:center;gap:10px"><div class="driverName">' + escapeHtml(drv.name) + '</div><div class="callBtn" onclick="event.stopPropagation(); callDriver(\'' + escapeHtml(drv.mobile_number||'') + '\')"><svg width="18" height="18" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.75 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg></div></div>';
+      html += '    <div class="driverStatus ' + statusClass + '">' + statusText + '</div>';
+      html += '  </div>';
+      html += '  <table class="ddTable"><thead><tr><th>TRP</th><th>LD</th><th>DR</th><th>PK</th><th>RM</th><th>STOPS</th></tr></thead><tbody>' + tableRows + '</tbody></table>';
+      html += '  <div id="' + safeId + '" class="hide" style="margin-top:10px">' + expandableHtml + '</div>';
+      html += '</div>';
+    });
+
+    if (!html) html = '<div class="card" style="text-align:center;color:#888">No drivers with routes assigned for today (' + opDate + ')</div>';
+    document.getElementById('ddDriverList').innerHTML = html;
+  } catch(err) {
+    document.getElementById('loader').classList.add('hide');
+    document.getElementById('ddDriverList').innerHTML = '<div class="card" style="color:#ff6b6b">Error: ' + escapeHtml(err.message||err) + '</div>';
+    console.error(err);
+  }
+}
+
+function toggleDriverExpand(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('hide');
+}
+
+function callDriver(mobile) {
+
+  if (!mobile || mobile.trim()==='') { alert('No mobile number for this driver'); return; }
+  window.open('tel:' + mobile.trim(), '_self');
+}
+
+function viewTxnPhoto(dummy, driver, drop, type) {
+  // find full txn in memory - simple alert for now, can open modal
+  alert('Photo view for ' + driver + ' - ' + drop + ' - type ' + type + ' (implement modal to show base64 image)');
+}
+
+
+var stockProductsList = [
+  "A2 Buffalo Milk", "A2 Desi Cow Milk", "Cow Milk", "Double Toned A2 Buffalo Milk",
+  "Skim Milk", "Toned Milk", "Pro Toned Milk", "Curd", "Cow Cup Curd",
+  "Probiotic Cup Curd", "Buffalo Cup Curd", "Tub Curd", "High Protein Curd",
+  "High Protein Paneer", "Malai Paneer 200G", "Butter Milk Cup", "Sweet Lassi",
+  "Buffalo Cup Curd 85g", "Buffalo Cup Curd 85g (4 Pack)", "Buffalo Butter",
+  "Cow Butter", "Salted Buffalo Butter", "Salted Cow Butter", "Buffalo Ghee (350 g)",
+  "Buffalo Ghee Spout", "Cow Ghee (350 g)", "Cow Ghee Spout", "Desi Cow Ghee",
+  "Mixed Ghee 500 g", "Welcome Kit", "Butter Milk 200 ML", "Curd 180G Pouch",
+  "High Protein Milk", "Eggs", "Assorted Pack of 3 Breakfast Cereals",
+  "Honey Fruit & Nut Muesli - Pack of 3", "Honey Fruit & Nut Muesli 200G",
+  "Mango Millet Pops - Pack of 3", "Mango Millet Pops 200G",
+  "Choco Ragi Crunchers - Pack of 3", "Choco Ragi Crunchers 200G",
+  "Insulated Milk Delivery Bag (Blue)", "Insulated Milk Delivery Bag (Red)",
+  "A2 Buffalo Milk UHT 1L Pack", "Mango Lassi", "Blueberry Lassi",
+  "Mozzarella Cheese", "Cheddar Cheese"
+];
+
+var currentSelectedStType = "";
+
+async function openStockTransactions(isRefresh) {
+  if (!isRefresh) { if (navStack[navStack.length - 1] !== 'staffHome') navStack.push('staffHome'); }
+  document.getElementById('staffHome').classList.add('hide');
+  document.getElementById('stockTxnDetailPage').classList.add('hide');
+  document.getElementById('stockTxnPage').classList.remove('hide');
+
+  var opDate = getOpDateWithCutoff();
+  document.getElementById('stOpDate').innerText = opDate;
+  document.getElementById('loader').classList.remove('hide');
+
+  try {
+    const { data: txns, error } = await supabase
+      .from('stock_transactions')
+      .select('transaction_type, entered_by, timestamp')
+      .eq('op_date', opDate).limit(10000);
+
+    document.getElementById('loader').classList.add('hide');
+    if (error) throw error;
+
+    var statusMap = {};
+    (txns || []).forEach(t => {
+      if (!statusMap[t.transaction_type]) {
+        var timeStr = t.timestamp ? new Date(t.timestamp).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+        statusMap[t.transaction_type] = { entered_by: t.entered_by, time: timeStr };
+      }
+    });
+
+    var html = '';
+    stockTxnTypes.forEach(type => {
+      var safeType = escapeHtml(type).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      var info = statusMap[type];
+      
+      html += '<div class="tripCard" onclick="openStockTxnDetail(\'' + safeType + '\')">';
+      html += '  <div class="dropCardTop">';
+      html += '    <div class="tripTitle" style="font-size:16px;margin:0">' + escapeHtml(type) + '</div>';
+      if (info) {
+        html += '    <div class="badge" style="background:#101d10;color:#7CFC00;border-color:#7CFC00">Updated</div>';
+      } else {
+        html += '    <div class="badge" style="background:#2a1a1a;color:#ff6b6b;border-color:#ff6b6b">Not Updated</div>';
+      }
+      html += '  </div>';
+      if (info) {
+        html += '  <div style="font-size:11px;color:#aaa;margin-top:6px">By ' + escapeHtml(info.entered_by || 'Staff') + ' at ' + info.time + '</div>';
+      } else {
+        html += '  <div style="font-size:11px;color:#666;margin-top:6px">Tap to record stock entry</div>';
+      }
+      html += '</div>';
+    });
+
+    document.getElementById('stTypesList').innerHTML = html;
+
+  } catch (err) {
+    document.getElementById('loader').classList.add('hide');
+    alert("Error loading stock transactions: " + (err.message || err));
+  }
+}
+
+async function openStockTxnDetail(type) {
+  if (navStack[navStack.length - 1] !== 'stockTxnPage') navStack.push('stockTxnPage');
+  currentSelectedStType = type;
+  document.getElementById('stockTxnPage').classList.add('hide');
+  document.getElementById('stockTxnDetailPage').classList.remove('hide');
+
+  var opDate = document.getElementById('stOpDate').innerText;
+  document.getElementById('stDetailType').innerText = type;
+  document.getElementById('stDetailDate').innerText = opDate;
+  document.getElementById('stRemarks').value = '';
+
+  document.getElementById('loader').classList.remove('hide');
+
+  const { data: existingData } = await supabase
+    .from('stock_transactions')
+    .select('product, qty, remarks')
+    .eq('op_date', opDate)
+    .eq('transaction_type', type);
+
+  document.getElementById('loader').classList.add('hide');
+
+  var existingMap = {};
+  if (existingData && existingData.length > 0) {
+    existingData.forEach(item => { existingMap[item.product] = item.qty; });
+    document.getElementById('stRemarks').value = existingData[0].remarks || '';
+  }
+
+  var html = '';
+  stockProductsList.forEach((prod, idx) => {
+    var qtyVal = existingMap[prod] !== undefined ? existingMap[prod] : '';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #222">';
+    html += '  <div style="font-size:13px;flex:1;padding-right:10px">' + escapeHtml(prod) + '</div>';
+    html += '  <input type="number" class="stQtyInput" data-product="' + escapeHtml(prod) + '" value="' + qtyVal + '" placeholder="0" style="width:80px;margin-bottom:0;text-align:center">';
+    html += '</div>';
+  });
+
+  document.getElementById('stProductsContainer').innerHTML = html;
+}
+
+async function submitStockTransaction() {
+  var inputs = document.querySelectorAll('.stQtyInput');
+  var opDate = document.getElementById('stDetailDate').innerText;
+  var remarks = document.getElementById('stRemarks').value.trim();
+  var payload = [];
+
+  inputs.forEach(input => {
+    var val = input.value.trim();
+    if (val !== '' && Number(val) > 0) {
+      payload.push({
+        op_date: opDate,
+        transaction_type: currentSelectedStType,
+        product: input.dataset.product,
+        qty: Number(val),
+        entered_by: currentUser.name,
+        remarks: remarks,
+        timestamp: getISTTimestamp()
+      });
+    }
+  });
+
+  if (payload.length === 0) {
+    alert("Please enter a quantity for at least one product.");
+    return;
+  }
+
+  var btn = document.getElementById('stSaveBtn');
+  btn.disabled = true;
+  btn.innerText = 'Submitting...';
+
+  try {
+    await supabase.from('stock_transactions')
+      .delete()
+      .eq('op_date', opDate)
+      .eq('transaction_type', currentSelectedStType);
+
+    const { error } = await supabase.from('stock_transactions').insert(payload);
+    if (error) throw error;
+
+    btn.innerText = '✓ Saved Successfully';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerText = 'Submit Stock Transaction';
+      handleSwipeBack();
+    }, 800);
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerText = 'Submit Stock Transaction';
+    alert("Save failed: " + (err.message || err));
+  }
+}
+</script>
+</body>
+</html>
