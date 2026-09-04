@@ -2008,61 +2008,64 @@ async function openVehicleRoutes(isRefresh) {
 }
 
 async function openVehicleRouteDetail(routeName) {
-  if (navStack[navStack.length - 1] !== 'vehicleRoutesPage') navStack.push('vehicleRoutesPage');
+  if (navStack[navStack.length - 1]!== 'vehicleRoutesPage') navStack.push('vehicleRoutesPage');
   document.getElementById('vehicleRoutesPage').classList.add('hide');
   document.getElementById('vehicleRouteDetailPage').classList.remove('hide');
 
-  var opDate = document.getElementById('vrOpDate').innerText;
+  var opDate = getOpDateWithCutoff();
   document.getElementById('vrDetailTitle').innerText = routeName;
   document.getElementById('vrDetailDate').innerText = opDate;
 
-  // --- START NEW STATUS CHECK ---
+  // HARD RESET - this is the main fix
+  vrPhotoBase64 = "";
+  const input = document.getElementById('vrPhotoInput');
+  if(input) input.value = "";
+  document.getElementById('vrPhotoBtn').innerText = "📷 Capture Photo";
+  document.getElementById('vrPhotoBtn').disabled = false;
+  document.getElementById('vrPhotoPreview').classList.add('hide');
+  const submitBtn = document.getElementById('vrPhotoSubmitBtn');
+  submitBtn.style.display = 'none';
+  submitBtn.disabled = false;
+  submitBtn.innerText = 'Submit Photo';
+  document.getElementById('vrPhotoStatus').innerText = '';
   document.getElementById('vrPhotoCaptureUI').classList.add('hide');
   document.getElementById('vrPhotoSubmittedUI').classList.add('hide');
-  vrPhotoBase64 = "";
-  if (document.getElementById('vrPhotoInput')) document.getElementById('vrPhotoInput').value = "";
-  document.getElementById('vrPhotoBtn').innerText = "📷 Capture Photo";
-  document.getElementById('vrPhotoPreview').classList.add('hide');
-  document.getElementById('vrPhotoSubmitBtn').style.display = 'none';
-  document.getElementById('vrPhotoStatus').innerText = '';
 
-  const { data: proofData } = await supabase
-    .from('route_loaded_proofs')
-    .select('*')
-    .eq('route_name', routeName)
-    .eq('op_date', opDate)
-    .maybeSingle();
+  document.getElementById('vrIndentContent').innerHTML = '<div style="text-align:center;color:#666">Loading...</div>';
 
-  if (proofData) {
-    document.getElementById('vrPhotoSubmittedUI').classList.remove('hide');
-    let dt = new Date(proofData.timestamp);
-    let timeStr = dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
-    document.getElementById('vrPhotoSubmittedText').innerText = 'By ' + escapeHtml(proofData.submitted_by) + ' at ' + timeStr;
-    document.getElementById('vrPhotoViewBtn').onclick = () => window.open(proofData.drive_url, '_blank');
-  } else {
+  try {
+    const { data: proofData, error } = await supabase
+     .from('route_loaded_proofs')
+     .select('*')
+     .eq('route_name', routeName.trim())
+     .eq('op_date', opDate)
+     .maybeSingle();
+
+    if(error) throw error;
+
+    if (proofData) {
+      document.getElementById('vrPhotoSubmittedUI').classList.remove('hide');
+      let dt = new Date(proofData.timestamp);
+      let timeStr = dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+      document.getElementById('vrPhotoSubmittedText').innerText = 'By ' + escapeHtml(proofData.submitted_by) + ' at ' + timeStr;
+      document.getElementById('vrPhotoViewBtn').onclick = () => window.open(proofData.drive_url, '_blank');
+    } else {
+      document.getElementById('vrPhotoCaptureUI').classList.remove('hide');
+    }
+  } catch(e){
+    console.log("proof check failed", e);
     document.getElementById('vrPhotoCaptureUI').classList.remove('hide');
   }
-  // --- END NEW STATUS CHECK ---
 
-  document.getElementById('vrIndentContent').innerHTML = '<div style="text-align:center;color:#666">Loading indents...</div>';
-  
-  const { data: rawIndentsRaw } = await supabase
-    .from('route_indents')
-    .select('*')
-    .eq('route_name', routeName)
-    .limit(10000);
-
+  const { data: rawIndentsRaw } = await supabase.from('route_indents').select('*').eq('route_name', routeName).limit(10000);
   const staffMap = {};
   (rawIndentsRaw || []).forEach(r => {
     const k = r.item_name;
-    if (!staffMap[k]) staffMap[k] = { ...r, quantity: 0 };
+    if (!staffMap[k]) staffMap[k] = {...r, quantity: 0 };
     staffMap[k].quantity += Number(r.quantity || 0);
   });
-  const rawIndents = Object.values(staffMap);
-
-  await renderIndentsList(rawIndents || [], 'vrIndentContent');
+  await renderIndentsList(Object.values(staffMap), 'vrIndentContent');
 }
-
 var stockTxnTypes = [
   "Return to Nizampet",
   "Return to Plant Fresh Milk",
@@ -2507,60 +2510,42 @@ function handleVrPhotoSelect(input) {
 }
 
 async function submitVrPhoto() {
-  if (!vrPhotoBase64) return;
+  if (!vrPhotoBase64) { alert("Capture photo first"); return; }
 
   var btn = document.getElementById('vrPhotoSubmitBtn');
   var statusElem = document.getElementById('vrPhotoStatus');
   btn.disabled = true;
   btn.innerText = 'Uploading to Drive...';
 
-  var routeName = document.getElementById('vrDetailTitle').innerText.trim(); // added trim()
+  var routeName = document.getElementById('vrDetailTitle').innerText.trim();
   var dateStr = getTodayString();
-
   var ist = getISTDate();
   var hours = ist.getHours();
   var ampm = hours >= 12? 'PM' : 'AM';
-  hours = hours % 12;
-  hours = hours? hours : 12;
+  hours = hours % 12; hours = hours? hours : 12;
   var mins = ist.getMinutes();
   var timeStr = (hours < 10? '0'+hours : hours) + ':' + (mins < 10? '0'+mins : mins) + ' ' + ampm;
-
   var staffName = (currentUser && currentUser.name)? currentUser.name : 'Unknown';
   var mobile = (currentUser && currentUser.mobile_number)? currentUser.mobile_number : 'Unknown';
   var fileName = routeName.replace(/\s+/g, '_') + '_' + mobile + '_' + Date.now() + '.jpg';
 
   try {
     var driveUrl = await uploadToGoogleDriveProper(vrPhotoBase64, fileName);
+    if(!driveUrl) throw new Error("Drive upload returned empty");
     btn.innerText = 'Posting to Google Chat...';
 
-    var messageText = "📦 Vehicle Route Loaded\n" +
-                      "Date: " + dateStr + "\n" +
-                      "Route: " + routeName + " (" + mobile + ")\n" +
-                      "Time: " + timeStr + "\n" +
-                      driveUrl;
+    var messageText = "📦 Vehicle Route Loaded\nDate: " + dateStr + "\nRoute: " + routeName + " (" + mobile + ")\nTime: " + timeStr + "\n" + driveUrl;
 
-    var webhookRes = await fetch(G_CHAT_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: messageText })
-    });
+    // don't block if chat fails
+    try {
+      await fetch(G_CHAT_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: messageText }) });
+    } catch(chatErr){ console.warn("Chat failed", chatErr); }
 
-    if (!webhookRes.ok) throw new Error("Webhook failed");
     btn.innerText = 'Saving Record...';
+    var insertPayload = { op_date: dateStr, route_name: routeName, submitted_by: staffName, timestamp: getISTTimestamp(), drive_url: driveUrl };
 
-    // --- FIXED PART: use UPSERT instead of INSERT ---
-    var insertPayload = {
-      op_date: dateStr,
-      route_name: routeName,
-      submitted_by: staffName,
-      timestamp: getISTTimestamp(),
-      drive_url: driveUrl
-    };
-
-    const { error } = await supabase
-     .from('route_loaded_proofs')
-     .upsert(insertPayload, { onConflict: 'route_name,op_date' });
-
+    // THIS FIXES THE HANG
+    const { error } = await supabase.from('route_loaded_proofs').upsert(insertPayload, { onConflict: 'route_name,op_date' });
     if (error) throw error;
 
     document.getElementById('vrPhotoCaptureUI').classList.add('hide');
@@ -2569,11 +2554,9 @@ async function submitVrPhoto() {
     document.getElementById('vrPhotoViewBtn').onclick = () => window.open(driveUrl, '_blank');
 
     setTimeout(() => {
-      if (navStack.length > 0 && navStack[navStack.length - 1] === 'vehicleRoutesPage') {
-        navStack.pop();
-      }
+      if (navStack.length > 0 && navStack[navStack.length - 1] === 'vehicleRoutesPage') navStack.pop();
       openVehicleRoutes(true);
-    }, 1200);
+    }, 1000);
 
   } catch (e) {
     console.error("FULL ERROR:", e);
@@ -2583,6 +2566,15 @@ async function submitVrPhoto() {
     btn.innerText = 'Retry Submission';
   }
 }
+function resetVrPhotoUI(){
+  vrPhotoBase64 = null;
+  const btn = document.getElementById('vrPhotoSubmitBtn');
+  const status = document.getElementById('vrPhotoStatus');
+  if(btn){ btn.disabled = false; btn.innerText = 'Submit Photo'; }
+  if(status){ status.innerText = ''; status.style.color = ''; }
+  document.getElementById('vrPhotoCaptureUI')?.classList.remove('hide');
+  document.getElementById('vrPhotoSubmittedUI')?.classList.add('hide');
+}  
 async function openDropWiseIndents(isRefresh) {
   if (!isRefresh) { if (navStack[navStack.length - 1] !== 'staffHome') navStack.push('staffHome'); }
   
