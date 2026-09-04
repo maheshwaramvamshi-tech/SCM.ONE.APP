@@ -2508,34 +2508,31 @@ function handleVrPhotoSelect(input) {
 
 async function submitVrPhoto() {
   if (!vrPhotoBase64) return;
-  
+
   var btn = document.getElementById('vrPhotoSubmitBtn');
   var statusElem = document.getElementById('vrPhotoStatus');
   btn.disabled = true;
   btn.innerText = 'Uploading to Drive...';
-  
-  var routeName = document.getElementById('vrDetailTitle').innerText;
+
+  var routeName = document.getElementById('vrDetailTitle').innerText.trim(); // added trim()
   var dateStr = getTodayString();
-  
-  // Format 12-hour time for Google Chat
+
   var ist = getISTDate();
   var hours = ist.getHours();
-  var ampm = hours >= 12 ? 'PM' : 'AM';
+  var ampm = hours >= 12? 'PM' : 'AM';
   hours = hours % 12;
-  hours = hours ? hours : 12;
+  hours = hours? hours : 12;
   var mins = ist.getMinutes();
-  var timeStr = (hours < 10 ? '0'+hours : hours) + ':' + (mins < 10 ? '0'+mins : mins) + ' ' + ampm;
-  
-  var staffName = (currentUser && currentUser.name) ? currentUser.name : 'Unknown';
-  var mobile = (currentUser && currentUser.mobile_number) ? currentUser.mobile_number : 'Unknown';
+  var timeStr = (hours < 10? '0'+hours : hours) + ':' + (mins < 10? '0'+mins : mins) + ' ' + ampm;
+
+  var staffName = (currentUser && currentUser.name)? currentUser.name : 'Unknown';
+  var mobile = (currentUser && currentUser.mobile_number)? currentUser.mobile_number : 'Unknown';
   var fileName = routeName.replace(/\s+/g, '_') + '_' + mobile + '_' + Date.now() + '.jpg';
-  
+
   try {
-    // 1. Upload to Google Drive
     var driveUrl = await uploadToGoogleDriveProper(vrPhotoBase64, fileName);
     btn.innerText = 'Posting to Google Chat...';
-    
-    // 2. Format exact text block and Post to Webhook
+
     var messageText = "📦 Vehicle Route Loaded\n" +
                       "Date: " + dateStr + "\n" +
                       "Route: " + routeName + " (" + mobile + ")\n" +
@@ -2547,11 +2544,11 @@ async function submitVrPhoto() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: messageText })
     });
-    
+
     if (!webhookRes.ok) throw new Error("Webhook failed");
     btn.innerText = 'Saving Record...';
 
-    // 3. Save to Supabase to lock UI
+    // --- FIXED PART: use UPSERT instead of INSERT ---
     var insertPayload = {
       op_date: dateStr,
       route_name: routeName,
@@ -2560,25 +2557,26 @@ async function submitVrPhoto() {
       drive_url: driveUrl
     };
 
-    const { error } = await supabase.from('route_loaded_proofs').insert([insertPayload]);
+    const { error } = await supabase
+     .from('route_loaded_proofs')
+     .upsert(insertPayload, { onConflict: 'route_name,op_date' });
+
     if (error) throw error;
-    
-    // 4. Update UI to Locked State momentarily
+
     document.getElementById('vrPhotoCaptureUI').classList.add('hide');
     document.getElementById('vrPhotoSubmittedUI').classList.remove('hide');
     document.getElementById('vrPhotoSubmittedText').innerText = 'By ' + escapeHtml(staffName) + ' at ' + timeStr;
     document.getElementById('vrPhotoViewBtn').onclick = () => window.open(driveUrl, '_blank');
-    
-    // 5. Auto-navigate back to the Vehicle Routes list after 1.2 seconds
+
     setTimeout(() => {
       if (navStack.length > 0 && navStack[navStack.length - 1] === 'vehicleRoutesPage') {
         navStack.pop();
       }
       openVehicleRoutes(true);
     }, 1200);
-    
+
   } catch (e) {
-    console.error(e);
+    console.error("FULL ERROR:", e);
     statusElem.innerText = '❌ Failed: ' + (e.message || e);
     statusElem.style.color = '#ff6b6b';
     btn.disabled = false;
