@@ -8,13 +8,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const SUPABASE_URL = 'https://csxfpltxtgrzgjlnkgec.supabase.co'; 
+  // WARNING: Anon keys and webhooks should ideally be secured behind a server proxy in production.
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzeGZwbHR4dGdyemdqbG5rZ2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2MjA0NTgsImV4cCI6MjEwMzE5NjQ1OH0.nsu_AZ40ZqdIQ2WDctChdNdCaF-cPhn8SX3QMSohAMM'; 
   
   var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // === GOOGLE DRIVE IMAGE CONFIG ===
   const GOOGLE_DRIVE_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbxwHT6u2inlnVmdbthAi8vEbcl_J9nXRKDN6GC7oA_lq7PBCaiaMK7IPOmvVG-KHH_CDw/exec'; 
-  const GOOGLE_DRIVE_FOLDER_ID = 'SCM ONE APP Photos'; // optional for reference
+  const GOOGLE_DRIVE_FOLDER_ID = 'SCM ONE APP Photos'; 
 </script>
 <style>
 *{font-family:'Outfit',sans-serif;box-sizing:border-box}
@@ -42,7 +43,6 @@ button{width:100%;background:white;color:black;border:none;border-radius:12px;pa
 #edgeZone{position:fixed;left:0;top:0;width:12px;height:100vh;z-index:50;pointer-events:auto;background:transparent}
 #swipeFeedback{position:fixed;left:10px;top:50%;transform:translateY(-50%) translateX(-80px);background:white;color:black;padding:8px 12px;border-radius:20px;font-size:11px;font-weight:700;z-index:100;transition:transform 0.2s;pointer-events:none;opacity:0}
 #swipeFeedback.show{transform:translateY(-50%) translateX(0);opacity:1}
-#swipeFeedback.show{transform:translateY(-50%) translateX(0)}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{color:#666;text-align:left;padding:8px;border-bottom:1px solid #2a2a2a}
 td{padding:8px;border-bottom:1px solid #1e1e1e}
@@ -89,7 +89,6 @@ html, body, button, .card, .module, .tripCard {
 .driverCard.completed .driverName{color:#065f06}
 .driverCard.completed .ddTable th{background:#16a34a;color:white}
 .driverCard.completed .ddTable{background:white;border-radius:10px;overflow:hidden}
-.driverCard.white{background:#fff;border-color:#2a2a2a;color:#fff}
 .driverCardHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .driverName{font-size:18px;font-weight:800;color:#000}
 .driverStatus{font-size:12px;font-weight:700;text-align:right;line-height:1.2}
@@ -104,12 +103,9 @@ html, body, button, .card, .module, .tripCard {
 .ddDrop{background:white;border-radius:12px;padding:10px;margin-top:8px;border:1px solid #c8e6c9}
 .ddDropTitle{font-size:13px;font-weight:800;color:#000}
 .ddDropMeta{font-size:11px;color:#2e7d32;margin-top:2px}
-.ddDropActions{display:flex;gap:8px;margin-top:8px}
-.ddPhotoBtn{flex:1;background:#111;color:white;border:none;border-radius:20px;padding:8px;font-size:12px;font-weight:700}
 
-/* Hide any stray single-char badges */
 body::before{content:none}
-
+#appToast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:99999;max-width:85%;text-align:center}
 </style>
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png?v=2">
 <link rel="apple-touch-icon" href="icon-180.png?v=2">
@@ -138,8 +134,8 @@ body::before{content:none}
   <div class="header">
     <h1 style="font-size:14px;margin:0;line-height:1.2">SCM ONE APP 2.0<br><span style="font-size:9px;color:#888;font-weight:400;letter-spacing:0.5px">Built by Team FM</span><br><span style="font-size:11px;color:#aaa" id="staffName">--</span></h1>
     <div style="display:flex;gap:8px">
-      <div class="badge" id="opDateStaff">--</div>
-      <div class="iconBtn" onclick="softRefresh()">↻</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><div class="badge" id="opDateStaff">--</div><div style="font-size:8px;color:#666" id="lastSyncStaff">Synced: --</div></div>
+      <div class="iconBtn" onclick="softRefresh()" title="Refresh">↻</div>
       <div class="iconBtn" onclick="logout()" style="background:#2a1a1a">⎋</div>
     </div>
   </div>
@@ -152,6 +148,10 @@ body::before{content:none}
       <div class="module" onclick="openRouteAssign()"><div><b>4. Route Assignment</b></div><div>→</div></div>
       <div class="module" onclick="openDriverDashboard()"><div><b>5. Driver Dashboard</b></div><div>→</div></div>
       <div class="module" onclick="openDropWiseIndents()"><div><b>6. Drop Wise Indents</b></div><div>→</div></div>
+      <div class="module" onclick="openEditTransaction()">
+        <div><b>7. Edit Transaction</b></div>
+        <div>→</div>
+      </div>
     </div>
   </div>
   
@@ -177,11 +177,10 @@ body::before{content:none}
     
     <div class="card" id="vrIndentContent">Loading...</div>
     
-    <!-- NEW: ROUTE LOADED PROOF SECTION -->
+    <!-- ROUTE LOADED PROOF SECTION -->
     <div class="card" id="vrPhotoSection">
       <div style="font-size:11px;color:#888;margin-bottom:8px;font-weight:700">ROUTE LOADED PROOF</div>
       
-      <!-- Capture UI -->
       <div id="vrPhotoCaptureUI" class="hide" style="text-align:center">
         <input type="file" id="vrPhotoInput" accept="image/*" capture="environment" class="hide" onchange="handleVrPhotoSelect(this)">
         <button type="button" class="btnDark" id="vrPhotoBtn" onclick="document.getElementById('vrPhotoInput').click()" style="padding:10px;font-size:11px;margin-bottom:10px;width:100%">📷 Capture Photo</button>
@@ -190,7 +189,6 @@ body::before{content:none}
         <div id="vrPhotoStatus" style="font-size:11px;color:#7CFC00;margin-top:8px"></div>
       </div>
 
-      <!-- Submitted UI (Locked) -->
       <div id="vrPhotoSubmittedUI" class="hide" style="text-align:center;background:#101d10;border:1px solid #7CFC00;border-radius:12px;padding:12px">
         <div style="font-size:14px;color:#7CFC00;font-weight:700;margin-bottom:4px">✓ Submitted</div>
         <div id="vrPhotoSubmittedText" style="font-size:11px;color:#aaa;margin-bottom:10px">By -- at --</div>
@@ -228,9 +226,71 @@ body::before{content:none}
       </select>
     </div>
     
-    <!-- Render container for the selected drop's indents -->
     <div class="card" id="dropWiseContent" style="display:none;"></div>
     
+    <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Home</button></div>
+  </div>
+  <div class="wrap hide" id="editTransactionPage">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2 style="margin:0;font-size:18px">Edit Transaction</h2>
+        <div class="badge" id="editTxnDateBadge" style="margin-top:8px">--</div>
+      </div>
+      <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
+    </div>
+    
+    <!-- Selection Card -->
+    <div class="card">
+      <label style="font-size:11px;color:#888;font-weight:700">SELECT DATE</label>
+      <input type="date" id="editTxnDate" onchange="loadTxnDropsForDate()" style="margin-top:6px; margin-bottom:12px;">
+      
+      <label style="font-size:11px;color:#888;font-weight:700">SELECT DROP</label>
+      <select id="editTxnDrop" onchange="loadTxnDetailsForDrop()" style="margin-top:6px; margin-bottom:0">
+        <option value="">-- Select Date First --</option>
+      </select>
+    </div>
+    
+    <!-- Editing Card -->
+    <div class="card hide" id="editTxnFormCard">
+      <div style="font-size:12px;font-weight:700;color:#aaa;margin-bottom:12px;letter-spacing:0.5px">CRATE TRACKING OVERRIDE</div>
+
+      <div style="display:flex;gap:10px;margin-bottom:10px">
+        <div style="flex:1">
+          <label style="font-size:10px;color:#888;font-weight:600">PREV HOLDING</label>
+          <input id="editPrev" type="number" placeholder="0" oninput="calcEditTxnCrates()">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:10px;color:#888;font-weight:600">DROPPED</label>
+          <input id="editDrop" type="number" placeholder="0" oninput="calcEditTxnCrates()">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-bottom:10px">
+        <div style="flex:1">
+          <label style="font-size:10px;color:#888;font-weight:600">PICKED</label>
+          <input id="editPick" type="number" placeholder="0" oninput="calcEditTxnCrates()">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:10px;color:#888;font-weight:600">NEW HOLDING</label>
+          <input id="editHolding" type="number" placeholder="0" oninput="calcEditTxnCrates()">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <div style="flex:1">
+          <label style="font-size:10px;color:#888;font-weight:600">EXPECTED (AUTO)</label>
+          <input id="editExpected" type="number" readonly style="background:#141414;color:#aaa;border-color:#222">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:10px;color:#888;font-weight:600">VARIANCE (AUTO)</label>
+          <input id="editVariance" type="number" readonly style="background:#141414;color:#aaa;border-color:#222">
+        </div>
+      </div>
+
+      <button class="btnGreen" id="editTxnSubmitBtn" onclick="submitEditTransaction()">Update Transaction</button>
+      <div id="editTxnMsg" style="text-align:center;font-size:11px;margin-top:8px;color:#7CFC00"></div>
+    </div>
+
     <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Home</button></div>
   </div>
 
@@ -289,8 +349,10 @@ body::before{content:none}
       <button class="btnDark" style="width:auto;padding:8px 14px" onclick="handleSwipeBack()">← Back</button>
     </div>
     <div class="card">
-      <label style="font-size:11px;color:#888">ROUTE</label>
-      <select id="selRoute" onchange="loadDrops()"><option>Loading...</option></select>
+      <label style="font-size:11px;color:#888;margin-bottom:6px;display:block">ROUTES (SELECT MULTIPLE)</label>
+      <div id="routeListContainer" style="background:#1e1e1e; border:1px solid #2e2e2e; border-radius:12px; padding:12px 12px 2px 12px; margin-bottom:12px; max-height:160px; overflow-y:auto;">
+        <div style="color:#666;font-size:13px;margin-bottom:10px">Loading routes...</div>
+      </div>
       <label style="font-size:11px;color:#888">TRIP NO</label>
       <input id="assignTripNo" placeholder="1">
       <label style="font-size:11px;color:#888">DRIVER</label>
@@ -307,8 +369,8 @@ body::before{content:none}
   <div class="header">
     <div><h1 style="font-size:14px;margin:0;line-height:1.2">SCM ONE APP 2.0<br><span style="font-size:9px;color:#888;font-weight:400;letter-spacing:0.5px">Built by Team FM</span></h1><div id="driverHello" style="font-size:11px;color:#aaa;margin-top:2px">Hello --</div></div>
     <div style="display:flex;gap:8px">
-      <div class="badge" id="opDateDriver">--</div>
-      <div class="iconBtn" onclick="softRefreshDriver()">↻</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><div class="badge" id="opDateDriver">--</div><div style="font-size:8px;color:#666" id="lastSyncDriver">Synced: --</div></div>
+      <div class="iconBtn" onclick="softRefreshDriver()" title="Refresh">↻</div>
       <div class="iconBtn" onclick="logout()" style="background:#2a1a1a">⎋</div>
     </div>
   </div>
@@ -320,7 +382,6 @@ body::before{content:none}
     </div>
     <div id="driverTrips"></div>
 
-    <!-- Return to Plant Module (Visible for PLANT DRIVER role) -->
     <div id="returnToPlantCard" class="card hide">
       <div style="font-size:16px;font-weight:700;margin-bottom:10px">Return to plant</div>
       <div id="returnToPlantForm">
@@ -369,6 +430,18 @@ body::before{content:none}
     </div>
     <div id="deliveryDrops"></div>
     <div class="bottomBar"><button class="btnDark" onclick="handleSwipeBack()">← Back to Trip</button></div>
+  </div>
+
+  <div id="customConfirmOverlay" class="hide" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);">
+    <div class="card" style="width:100%;max-width:320px;margin:0;padding:24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.8);border:1px solid #333;">
+      <div style="font-size:32px;margin-bottom:12px;">📦</div>
+      <h3 id="customConfirmTitle" style="margin:0 0 10px;font-size:18px;color:#fff;">Confirm Action</h3>
+      <p id="customConfirmMessage" style="color:#aaa;font-size:13px;margin:0 0 24px;line-height:1.4;"></p>
+      <div style="display:flex;gap:10px;">
+        <button id="customConfirmCancelBtn" class="btnDark" style="flex:1;padding:10px;">Cancel</button>
+        <button id="customConfirmOkBtn" class="btnGreen" style="flex:1;padding:10px;">Confirm</button>
+      </div>
+    </div>
   </div>
 
   <div class="wrap hide" id="dropDetailPage">
@@ -456,7 +529,6 @@ function isPlantDriverRole(role) {
   return String(role).trim().toLowerCase() === 'plant driver';
 }
 
-// Generic helper to fetch ALL rows beyond Supabase 1000 limit with bounded loop protection
 async function fetchAllRows(table, selectCols, filterFn) {
   let all = [];
   let from = 0;
@@ -507,6 +579,38 @@ function formatTrip(t) {
   return t;
 }
 
+function showToast(msg, isError) {
+  var ex = document.getElementById('appToast'); if (ex) ex.remove();
+  var t = document.createElement('div'); t.id = 'appToast';
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:' + (isError ? '#ff4444' : '#333') + ';color:white;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:99999;max-width:85%;text-align:center;';
+  t.innerText = msg; document.body.appendChild(t); setTimeout(function () { if (t.parentNode) t.remove(); }, 3500);
+}
+function updateLastSynced(){
+  var now=getISTDate(); var h=now.getHours(); var m=now.getMinutes();
+  var ampm=h>=12?'PM':'AM'; h=h%12; h=h?h:12; var mm=m<10?'0'+m:m;
+  var str=h+':'+mm+' '+ampm;
+  var a=document.getElementById('lastSyncStaff'); var b=document.getElementById('lastSyncDriver');
+  if(a) a.innerText='Synced: '+str; if(b) b.innerText='Synced: '+str;
+  localStorage.setItem('last_synced_time',str);
+}
+function checkAndRestoreLastSync(){
+  var s=localStorage.getItem('last_synced_time');
+  if(s){ var a=document.getElementById('lastSyncStaff'); var b=document.getElementById('lastSyncDriver'); if(a) a.innerText='Synced: '+s; if(b) b.innerText='Synced: '+s; }
+}
+var autoLogoutInterval=null;
+function startAutoLogoutCheck(){
+  if(autoLogoutInterval) clearInterval(autoLogoutInterval);
+  autoLogoutInterval=setInterval(function(){
+    var ist=getISTDate();
+    if(ist.getHours()===16 && ist.getMinutes()===0){
+      var k=getTodayString()+'_autologout';
+      if(!localStorage.getItem(k)){ localStorage.setItem(k,'done'); showToast('Auto logout at 4 PM',false); setTimeout(function(){ logout(); },2000); }
+    }
+  },60000);
+}
+function stopAutoLogoutCheck(){ if(autoLogoutInterval){ clearInterval(autoLogoutInterval); autoLogoutInterval=null; } }
+function handleNavigateClick(drop){ showToast('🚧 Navigate coming soon!',false); }
+
 function escapeHtml(s) {
   return String(s || '').replace(/[&<>"']/g, function(m) {
     return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];
@@ -547,7 +651,7 @@ function initSwipeChrome() {
 function setupRealtime() {
   if (realTimeSubscription) supabase.removeChannel(realTimeSubscription);
   realTimeSubscription = supabase
-    .channel('public:transactions')
+    .channel('public-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, function(payload) {
       if (currentUser && isDriverRole(currentUser.role)) {
         const activePage = document.querySelector('.wrap:not(.hide)');
@@ -558,8 +662,24 @@ function setupRealtime() {
         }
       }
     })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'master_routes' }, function(payload) {
+      if (currentUser && isDriverRole(currentUser.role)) {
+        // Force a data refresh in the background if staff reassigns a route
+        loadDriverDashboard();
+      }
+    })
     .subscribe();
 }
+document.addEventListener('visibilitychange', function(){
+  if (document.hidden) {
+    console.log('App hidden - pausing auto refresh');
+  } else {
+    console.log('App visible - triggering refresh');
+    if (currentUser) {
+      setTimeout(function(){ softRefresh(true); }, 800);
+    }
+  }
+});
 
 function showLogin() {
   document.getElementById('loader').classList.add('hide');
@@ -591,7 +711,9 @@ async function doLogin() {
 
     if (data) {
       currentUser = data;
-      localStorage.setItem('scm_user', JSON.stringify(data));
+      var safeUser = Object.assign({}, data);
+      delete safeUser.pin;
+      localStorage.setItem('scm_user', JSON.stringify(safeUser));
       afterLogin();
     } else {
       document.getElementById('loader').classList.add('hide');
@@ -611,6 +733,9 @@ function afterLogin() {
   currentSessionId = Date.now();
   var todayStr = getTodayString();
   setupRealtime();
+  startAutoRefresh();
+  
+  updateLastSynced();
   
   if (isDriverRole(currentUser.role)) {
     document.getElementById('driverApp').classList.remove('hide');
@@ -718,7 +843,6 @@ async function loadDriverDashboard() {
     if (!html) html = '<div class="card" style="text-align:center;color:#666">No trips assigned for today</div>';
     document.getElementById('driverTrips').innerHTML = html;
 
-    // Handle Return to Plant Card for PLANT DRIVER role
     var rtpCard = document.getElementById('returnToPlantCard');
     if (isPlantDriverRole(currentUser.role)) {
       rtpCard.classList.remove('hide');
@@ -728,7 +852,6 @@ async function loadDriverDashboard() {
       var rtpMsg = document.getElementById('rtpMsg');
 
       if (rtpData) {
-        // Already submitted for this operational day
         rtpInput.value = rtpData.qty !== undefined ? rtpData.qty : (rtpData.count || 0);
         rtpInput.disabled = true;
         rtpBtn.disabled = true;
@@ -737,7 +860,6 @@ async function loadDriverDashboard() {
         rtpMsg.innerText = '✓ Return to plant submitted for today (' + (rtpData.qty !== undefined ? rtpData.qty : rtpData.count) + '). Locked until next operational day.';
         rtpMsg.style.color = '#7CFC00';
       } else {
-        // Not yet submitted for this operational day
         rtpInput.value = '';
         rtpInput.disabled = false;
         rtpBtn.disabled = false;
@@ -752,7 +874,7 @@ async function loadDriverDashboard() {
   } catch (err) {
     if (sessionToken !== currentSessionId) return;
     document.getElementById('loader').classList.add('hide');
-    alert("Dashboard load failed: " + (err.message || err));
+    showToast("Dashboard load failed: " + (err.message || err), true);
   }
 }
 
@@ -761,7 +883,7 @@ async function submitReturnToPlant() {
 
   var valRaw = document.getElementById('rtpQtyInput').value.trim();
   if (valRaw === "" || isNaN(valRaw) || Number(valRaw) < 0) {
-    alert("Please enter a valid number");
+    showToast("Please enter a valid number", true);
     return;
   }
 
@@ -773,7 +895,6 @@ async function submitReturnToPlant() {
   var qtyVal = Number(valRaw);
 
   try {
-    // Check if entry already exists for this operational day
     const { data: existing } = await supabase
       .from('return_to_plant')
       .select('id')
@@ -782,7 +903,7 @@ async function submitReturnToPlant() {
       .maybeSingle();
 
     if (existing) {
-      alert("Submission already exists for today's operational day.");
+      showToast("Submission already exists for today's operational day.", true);
       loadDriverDashboard();
       return;
     }
@@ -807,11 +928,16 @@ async function submitReturnToPlant() {
   } catch (err) {
     btn.disabled = false;
     btn.innerText = 'Submit';
-    alert("Submission failed: " + (err.message || err));
+    showToast("Submission failed: " + (err.message || err), true);
   }
 }
 
 function logout() {
+  if(typeof stopAutoRefresh==='function') stopAutoRefresh();
+  if(typeof stopAutoLogoutCheck==='function') stopAutoLogoutCheck();
+
+  stopAutoRefresh();
+
   if (realTimeSubscription) supabase.removeChannel(realTimeSubscription);
   currentSessionId = Date.now();
   localStorage.removeItem('scm_user');
@@ -843,7 +969,21 @@ function logout() {
   document.getElementById('loginCard').classList.remove('hide');
 }
 
-function softRefresh() {
+var autoRefreshInterval = null;
+var isRefreshing = false;
+
+function softRefresh(isAuto) {
+  if (isRefreshing) return;
+  isRefreshing = true;
+
+  var refreshBtns = document.querySelectorAll('.iconBtn');
+  refreshBtns.forEach(function(b){
+    if (b.innerText.includes('↻')) {
+      b.style.transition = 'transform 0.6s';
+      b.style.transform = 'rotate(360deg)';
+    }
+  });
+
   try {
     var opDateNow = getOpDateWithCutoff();
     var el;
@@ -853,107 +993,162 @@ function softRefresh() {
     el = document.getElementById('opDateDriver'); if (el) el.innerText = opDateNow;
     el = document.getElementById('vrOpDate'); if (el) el.innerText = opDateNow;
     el = document.getElementById('stOpDate'); if (el) el.innerText = opDateNow;
+    el = document.getElementById('stDetailDate'); if (el) el.innerText = opDateNow;
+    el = document.getElementById('dwOpDate'); if (el) el.innerText = opDateNow;
     el = document.getElementById('ddOpDate'); if (el) el.innerText = opDateNow;
 
-    // Helper to check if element is visible
     function isVisible(id) {
       var e = document.getElementById(id);
       return e && !e.classList.contains('hide');
     }
 
-    // Staff modules
     if (isVisible('driverDashboardPage')) {
+      document.getElementById('ddDriverList').innerHTML = '';
       openDriverDashboard(true);
+      finishRefresh();
       return;
     }
     if (isVisible('vehicleRouteDetailPage')) {
+      document.getElementById('vrIndentContent').innerHTML = '';
       var rName = document.getElementById('vrDetailTitle').innerText;
-      if (rName && rName !== 'Route') openVehicleRouteDetail(rName); else openVehicleRoutes(true);
+      resetVrPhotoUI();
+      if (rName && rName !== 'Route' && rName !== '--') openVehicleRouteDetail(rName); else openVehicleRoutes(true);
+      finishRefresh();
       return;
     }
     if (isVisible('vehicleRoutesPage')) {
+      document.getElementById('vrRoutesList').innerHTML = '';
       openVehicleRoutes(true);
+      finishRefresh();
       return;
     }
     if (isVisible('stockTxnDetailPage')) {
+      document.getElementById('stProductsContainer').innerHTML = '';
+      document.getElementById('stRemarks').value = '';
       if (currentSelectedStType) openStockTxnDetail(currentSelectedStType); else openStockTransactions(true);
+      finishRefresh();
       return;
     }
     if (isVisible('stockTxnPage')) {
+      document.getElementById('stTypesList').innerHTML = '';
       openStockTransactions(true);
+      finishRefresh();
       return;
     }
     if (isVisible('loadCratesPage')) {
-      // keep selections but reload drivers
+      document.getElementById('selLoadTrip').innerHTML = '<option value="">-- Select Driver First --</option>';
+      document.getElementById('numLoadedCrates').value = '';
+      document.getElementById('loadCratesMsg').innerText = '';
       initStaff();
-      var drv = document.getElementById('selLoadDriver').value;
-      if (drv) loadDriverTripsForStaff();
+      finishRefresh();
       return;
     }
     if (isVisible('routeAssignPage')) {
+      document.getElementById('selRoute').value = '';
+      document.getElementById('selDriver').value = '';
+      document.getElementById('assignTripNo').value = 'Trip 1';
+      document.getElementById('dropsContainer').innerHTML = '';
+      document.getElementById('assignMsg').innerText = '';
       initStaff();
-      // if route selected, reload its drops
-      setTimeout(function(){
-        var sel = document.getElementById('selRoute');
-        if (sel && sel.value) loadDrops();
-      }, 300);
+      finishRefresh();
       return;
     }
     if (isVisible('staffHome')) {
       initStaff();
-      return;
-    }
-
-    // Driver modules
-    if (isVisible('dropDetailPage')) {
-      var dName = currentOpenDrop;
-      if (dName) {
-        var isRO = document.getElementById('detailSaveBtn').disabled;
-        openDropDetail(dName, isRO);
-      } else {
-        openDelivery();
-      }
-      return;
-    }
-    if (isVisible('routeIndentPage')) {
-      viewRouteIndent();
-      return;
-    }
-    if (isVisible('driverDeliveryPage')) {
-      openDelivery();
-      return;
-    }
-    if (isVisible('driverTripDetail')) {
-      if (currentTripNo) openTrip(currentTripNo); else loadDriverDashboard();
-      return;
-    }
-    if (isVisible('driverTripList')) {
-      loadDriverDashboard();
+      finishRefresh();
       return;
     }
     if (isVisible('dropWiseIndentPage')) {
-      let currentDrop = document.getElementById('selDropWise').value;
-      openDropWiseIndents(true).then(() => {
-        if (currentDrop) {
-          document.getElementById('selDropWise').value = currentDrop;
-          loadDropWiseData();
-        }
-      });
+      document.getElementById('dropWiseContent').innerHTML = '';
+      document.getElementById('dropWiseContent').style.display = 'none';
+      document.getElementById('selDropWise').value = '';
+      openDropWiseIndents(true);
+      finishRefresh();
       return;
     }
 
-    // Fallback
+    if (isVisible('dropDetailPage')) {
+      resetPhotoCaptureState();
+      if (currentOpenDrop) {
+        openDropDetail(currentOpenDrop, false);
+      } else {
+        openDelivery();
+      }
+      finishRefresh();
+      return;
+    }
+    if (isVisible('routeIndentPage')) {
+      document.getElementById('routeIndentContent').innerHTML = '';
+      viewRouteIndent();
+      finishRefresh();
+      return;
+    }
+    if (isVisible('driverDeliveryPage')) {
+      document.getElementById('deliveryDrops').innerHTML = '';
+      openDelivery();
+      finishRefresh();
+      return;
+    }
+    if (isVisible('driverTripDetail')) {
+      document.getElementById('tripRoutesList').innerHTML = '';
+      if (currentTripNo) openTrip(currentTripNo); else loadDriverDashboard();
+      finishRefresh();
+      return;
+    }
+    if (isVisible('driverTripList') || isVisible('driverApp')) {
+      loadDriverDashboard();
+      finishRefresh();
+      return;
+    }
+
     if (currentUser) {
       if (isDriverRole(currentUser.role)) loadDriverDashboard();
       else initStaff();
     }
+    finishRefresh();
   } catch(e) {
     console.error('softRefresh error', e);
-    // ultimate fallback
     if (currentUser && isDriverRole(currentUser.role)) loadDriverDashboard(); else initStaff();
+    finishRefresh();
+  }
+
+  function finishRefresh(){
+    setTimeout(function(){
+      isRefreshing = false;
+      var btns = document.querySelectorAll('.iconBtn');
+      btns.forEach(function(b){
+        if (b.innerText.includes('↻')) {
+          b.style.transform = 'rotate(0deg)';
+        }
+      });
+      updateLastSynced();
+      if (!isAuto) {
+        try { if (window.navigator.vibrate) window.navigator.vibrate(50); } catch(_){}
+      }
+    }, 600);
   }
 }
-function softRefreshDriver() { softRefresh(); }
+
+function softRefreshDriver() { softRefresh(false); }
+
+function startAutoRefresh() {
+  if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+  autoRefreshInterval = setInterval(function(){
+    var active = document.activeElement;
+    var isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'SELECT' || active.tagName === 'TEXTAREA');
+    if (isTyping) {
+      return;
+    }
+    softRefresh(true);
+  }, 5 * 60 * 1000); 
+}
+
+function stopAutoRefresh() {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+    autoRefreshInterval = null;
+  }
+}
 
 async function initStaff() {
   document.getElementById('loader').classList.remove('hide');
@@ -965,10 +1160,13 @@ async function initStaff() {
 
     var driverList = (driversData || []).filter(x => isDriverRole(x.role));
 
-    var routes = [...new Set((routesData || []).map(r => r.route).filter(Boolean))];
-    var html = '<option value="">-- Select Route --</option>';
-    routes.forEach(r => { html += '<option value="' + escapeHtml(r) + '">' + escapeHtml(r) + '</option>'; });
-    document.getElementById('selRoute').innerHTML = html;
+    var routes = [...new Set((routesData || []).map(r => r.route).filter(Boolean))].sort();
+    var routeHtml = '';
+    routes.forEach(r => { 
+      routeHtml += '<label style="display:flex; align-items:center; gap:10px; margin-bottom:12px; font-size:14px; color:white;"><input type="checkbox" class="routeCheck" value="' + escapeHtml(r) + '" onchange="loadDrops()" style="width:20px;height:20px;margin:0"> ' + escapeHtml(r) + '</label>'; 
+    });
+    var rContainer = document.getElementById('routeListContainer');
+    if (rContainer) rContainer.innerHTML = routeHtml || '<div style="color:#666;font-size:13px;margin-bottom:10px">No routes found</div>';
 
     var dHtml = '<option value="">-- Select Driver --</option>';
     driverList.forEach(x => { dHtml += '<option value="' + escapeHtml(x.name) + '">' + escapeHtml(x.name) + '</option>'; });
@@ -1029,7 +1227,7 @@ async function loadDriverTripsForStaff() {
     selTrip.innerHTML = html;
   } catch (err) {
     document.getElementById('loader').classList.add('hide');
-    alert("Error loading driver trips: " + (err.message || err));
+    showToast("Error loading driver trips: " + (err.message || err), true);
   }
 }
 
@@ -1038,10 +1236,10 @@ async function submitLoadCrates() {
   var trip = document.getElementById('selLoadTrip').value;
   var cratesRaw = document.getElementById('numLoadedCrates').value.trim();
 
-  if (!driver) { alert("Please select a driver"); return; }
-  if (!trip) { alert("Please select a trip"); return; }
+  if (!driver) { showToast("Please select a driver", true); return; }
+  if (!trip) { showToast("Please select a trip", true); return; }
   if (cratesRaw === "" || isNaN(cratesRaw) || Number(cratesRaw) < 0) {
-    alert("Please enter a valid crates loaded number"); return;
+    showToast("Please enter a valid crates loaded number", true); return;
   }
 
   var btn = document.getElementById('saveLoadCratesBtn');
@@ -1077,7 +1275,7 @@ async function submitLoadCrates() {
   } catch (err) {
     btn.disabled = false;
     btn.innerText = 'Save Loaded Crates';
-    alert("Failed to save loaded crates: " + (err.message || err));
+    showToast("Failed to save loaded crates: " + (err.message || err), true);
   }
 }
 
@@ -1086,51 +1284,80 @@ function backHome(fromSwipe) {
   document.getElementById('routeAssignPage').classList.add('hide');
   document.getElementById('loadCratesPage').classList.add('hide');
   document.getElementById('dropWiseIndentPage').classList.add('hide');
+  document.getElementById('editTransactionPage').classList.add('hide');
   document.getElementById('staffHome').classList.remove('hide');
 }
 
 async function loadDrops() {
-  var sel = document.getElementById('selRoute').value;
-  if (!sel) return;
+  var checkedRoutes = Array.from(document.querySelectorAll('.routeCheck:checked')).map(cb => cb.value);
+  if (checkedRoutes.length === 0) { 
+    document.getElementById('dropsContainer').innerHTML = ''; 
+    return; 
+  }
+  
   document.getElementById('loader').classList.remove('hide');
 
   var opDateLD = getOpDateWithCutoff();
-  const { data: list } = await supabase.from('master_routes').select('*').eq('route', sel).eq('op_date', opDateLD).limit(10000);
+  // Fetch drops for ALL selected routes
+  const { data: list } = await supabase.from('master_routes').select('*').in('route', checkedRoutes).eq('op_date', opDateLD).limit(10000);
   document.getElementById('loader').classList.add('hide');
 
-  var html = '<div style="font-size:11px;color:#888;margin-bottom:6px">' + (list || []).length + ' drops</div>';
+  var html = '<div style="font-size:11px;color:#888;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">';
+  html += '<span>' + (list || []).length + ' DROPS TOTAL</span>';
+  html += '<label style="color:#7CFC00;font-size:12px;font-weight:700;"><input type="checkbox" checked onchange="toggleAllAssignDrops(this)" style="width:auto;margin-right:4px;"> All</label>';
+  html += '</div>';
+
   (list || []).forEach(r => {
     var tripLabel = formatTrip(r.trip_no || 'Trip 1');
-    html += '<div class="dropRow"><input type="checkbox" class="dropCheck" data-route="' + escapeHtml(r.route) + '" data-drop="' + escapeHtml(r.drop) + '" checked style="width:18px"><div class="dropName">' + escapeHtml(r.drop) + '<br><span style="font-size:10px;color:' + (r.driver ? '#7CFC00' : '#666') + '">' + escapeHtml(r.driver || 'No driver') + ' | ' + escapeHtml(tripLabel) + '</span></div></div>';
+    html += '<div class="dropRow"><input type="checkbox" class="dropCheck" data-route="' + escapeHtml(r.route) + '" data-drop="' + escapeHtml(r.drop) + '" checked style="width:18px"><div class="dropName">' + escapeHtml(r.drop) + '<br><span style="font-size:10px;color:' + (r.driver ? '#7CFC00' : '#666') + '">' + escapeHtml(r.driver || 'No driver') + ' | ' + escapeHtml(tripLabel) + ' (' + escapeHtml(r.route) + ')</span></div></div>';
   });
   document.getElementById('dropsContainer').innerHTML = html;
 }
 
+// Helper to check/uncheck all drops at once
+function toggleAllAssignDrops(masterCheckbox) {
+  var checkboxes = document.querySelectorAll('.dropCheck');
+  checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+}
 async function assignSelected() {
   var driver = document.getElementById('selDriver').value;
   var tripRaw = document.getElementById('assignTripNo').value || '1';
   var trip = formatTrip(tripRaw);
-  if (!driver) { alert('Select driver'); return; }
+  if (!driver) { showToast('Select driver', true); return; }
 
   var checks = document.querySelectorAll('.dropCheck:checked');
-  if (checks.length === 0) { alert('Select drop'); return; }
+  if (checks.length === 0) { showToast('Select at least one drop', true); return; }
 
-  document.getElementById('assignBtn').disabled = true;
-  document.getElementById('assignBtn').innerText = 'Updating...';
+  var btn = document.getElementById('assignBtn');
+  btn.disabled = true;
+  btn.innerText = 'Updating ' + checks.length + ' drops...';
 
   var opDateAssign = getOpDateWithCutoff();
+  var updatePromises = [];
+
+  // Batch promises for concurrent updates
   for (let c of checks) {
-    await supabase.from('master_routes')
-      .update({ driver: driver, trip_no: trip })
-      .eq('route', c.dataset.route)
-      .eq('drop', c.dataset.drop)
-      .eq('op_date', opDateAssign);
+    updatePromises.push(
+      supabase.from('master_routes')
+        .update({ driver: driver, trip_no: trip })
+        .eq('route', c.dataset.route)
+        .eq('drop', c.dataset.drop)
+        .eq('op_date', opDateAssign)
+    );
   }
 
-  document.getElementById('assignBtn').disabled = false;
-  document.getElementById('assignBtn').innerText = 'Assign to ' + trip;
-  document.getElementById('assignMsg').innerText = 'Updated ' + checks.length + ' drops as ' + trip;
-  loadDrops();
+  try {
+    await Promise.all(updatePromises);
+    showToast('✓ Assigned ' + checks.length + ' drops to ' + trip, false);
+  } catch (e) {
+    showToast('Error updating drops: ' + e.message, true);
+  }
+
+  btn.disabled = false;
+  btn.innerText = 'Assign / Re-Assign';
+  
+  // Reload the drops UI to show the new assigned driver/trip tags
+  loadDrops(); 
 }
 
 function openTrip(tripNo) {
@@ -1163,8 +1390,8 @@ function handleSwipeBack() {
       document.getElementById('driverDashboardPage').classList.add('hide');
       document.getElementById('stockTxnPage').classList.add('hide');
       document.getElementById('stockTxnDetailPage').classList.add('hide');
-      // NEW: Hide Drop Wise Indents when going back to Staff Home
       document.getElementById('dropWiseIndentPage').classList.add('hide'); 
+      document.getElementById('editTransactionPage').classList.add('hide');
       
       document.getElementById('staffHome').classList.remove('hide');
     } else if (prev === 'vehicleRoutesPage') {
@@ -1226,7 +1453,7 @@ function backToTripDetailFromSub() {
 }
 
 async function viewRouteIndent() {
-  if (!currentTripNo) { alert("No trip selected"); return; }
+  if (!currentTripNo) { showToast("No trip selected", true); return; }
   if (navStack[navStack.length - 1] !== 'tripDetail') navStack.push('tripDetail');
 
   document.getElementById('driverDeliveryPage').classList.add('hide');
@@ -1271,10 +1498,8 @@ async function showCombR() {
     item_name: itemName,
     quantity: totals[itemName]
   }));
-
   await renderIndentsList(combinedPayload, 'routeIndentContent');
 }
-
 async function showSepR() {
   document.getElementById('btnSepR').className = 'btnGreen';
   document.getElementById('btnCombR').className = 'btnDark';
@@ -1309,11 +1534,10 @@ async function showSepR() {
 }
 
 function navigateDrop(dropName) {
-  window.open('https://www.google.com/maps/search/' + encodeURIComponent(dropName), '_blank');
+  showToast('🚧 Navigate coming soon!', false);
+  return;
 }
 
-
-// --- Google Drive Uploader ---
 async function uploadToGoogleDrive(base64Data, fileName) {
   if (!GOOGLE_DRIVE_UPLOAD_URL || GOOGLE_DRIVE_UPLOAD_URL.includes('YOUR_GOOGLE')) {
     console.warn('Google Drive URL not set - using base64 fallback');
@@ -1493,7 +1717,15 @@ async function submitDetailDelivery() {
   var newHoldingRaw = document.getElementById('detailNewHolding').value.trim();
 
   if (droppedRaw === "" || pickedRaw === "" || newHoldingRaw === "") {
-    alert("Please fill in all required fields marked with * (Dropped, Picked, and New Holding).");
+    showToast("Please fill all * fields (Dropped, Picked, New Holding)", true);
+    return;
+  }
+
+  if (!photo1Base64 || !photo2Base64) {
+    showToast("📸 Both photos are MANDATORY! Capture Photo 1 and Photo 2", true);
+    var b1=document.getElementById('photoBtn1'); var b2=document.getElementById('photoBtn2');
+    if(!photo1Base64 && b1){ b1.style.border='2px solid #ff4444'; b1.style.background='#3a1a1a'; }
+    if(!photo2Base64 && b2){ b2.style.border='2px solid #ff4444'; b2.style.background='#3a1a1a'; }
     return;
   }
 
@@ -1528,7 +1760,6 @@ async function submitDetailDelivery() {
     }
   } catch (e) {
     console.error(e);
-    // fallback to base64
     finalImage1Url = photo1Base64;
     finalImage2Url = photo2Base64;
   }
@@ -1569,91 +1800,102 @@ async function submitDetailDelivery() {
   } else {
     btn.disabled = false;
     btn.innerText = 'Retry Submission';
-    alert("Submission Error: " + error.message);
+    showToast("Submission Error: " + error.message, true);
   }
 }
 
 async function noIndentDrop(dropName) {
-  if (!confirm('Mark ' + dropName + ' as No Indent?')) return;
-  var items = currentDropData[dropName];
-  var route = items ? items[0].route : '';
-  var channelType = items ? items[0].channel_type : '';
-  var mapLink = items ? items[0].map_link : '';
+  try {
+    document.getElementById('loader').classList.remove('hide');
+    const { data: lastTxn } = await supabase.from('transactions').select('holding_today').eq('drop_name', dropName).order('created_at', { ascending: false }).limit(1).maybeSingle();
+    document.getElementById('loader').classList.add('hide');
+    
+    var prevHolding = lastTxn ? (lastTxn.holding_today || 0) : 0;
+    if (prevHolding > 0) { 
+      showToast('⚠️ Collect crates! Prev holding: ' + prevHolding + ' at ' + dropName, true); 
+      return; 
+    }
+    
+    // Call the classy custom modal
+    var isConfirmed = await showCustomConfirm(
+      'Mark as No Indent?', 
+      'Are you sure you want to mark ' + escapeHtml(dropName) + ' as No Indent? Previous holding is 0.'
+    );
+    
+    if (!isConfirmed) return; // Exit if they clicked Cancel
 
-  var payload = {
-    op_date: getTodayString(),
-    created_at: getISTTimestampForTimestampWithoutTZ(),
-    driver_name: currentUser.name,
-    trip_no: currentTripNo,
-    route_name: route,
-    drop_name: dropName,
-    channel_type: channelType,
-    map_link: mapLink,
-    prev_holding: 0,
-    dropped_today: 0,
-    picked_today: 0,
-    holding_today: 0,
-    expected_trays: 0,
-    variance: 0,
-    image1_url: '',
-    image2_url: '',
-    location_link: 'NO_INDENT'
-  };
-
-  const { error } = await supabase.from('transactions').insert([payload]);
-  if (!error) {
-    deliveryStatus[dropName] = payload;
-    openDelivery();
+    var items = currentDropData[dropName];
+    var route = items ? items[0].route : '';
+    var channelType = items ? items[0].channel_type : '';
+    var mapLink = items ? items[0].map_link : '';
+    var payload = { 
+      op_date: getTodayString(), 
+      created_at: getISTTimestampForTimestampWithoutTZ(), 
+      driver_name: currentUser.name, 
+      trip_no: currentTripNo, 
+      route_name: route, 
+      drop_name: dropName, 
+      channel_type: channelType, 
+      map_link: mapLink, 
+      prev_holding: prevHolding, 
+      dropped_today: 0, 
+      picked_today: 0, 
+      holding_today: 0, 
+      expected_trays: 0, 
+      variance: 0, 
+      image1_url: '', 
+      image2_url: '', 
+      location_link: 'NO_INDENT' 
+    };
+    
+    const { error } = await supabase.from('transactions').insert([payload]);
+    
+    if (!error) { 
+      deliveryStatus[dropName] = payload; 
+      showToast('✓ Marked No Indent: ' + dropName, false); 
+      openDelivery(); 
+    } else { 
+      showToast('Error: ' + error.message, true); 
+    }
+  } catch(e) { 
+    document.getElementById('loader').classList.add('hide'); 
+    showToast('Error: ' + (e.message||e), true); 
   }
 }
-
 async function openDelivery() {
   if (navStack[navStack.length - 1] !== 'tripDetail') navStack.push('tripDetail');
   document.getElementById('driverTripDetail').classList.add('hide');
   document.getElementById('driverDeliveryPage').classList.remove('hide');
   document.getElementById('deliveryHead').innerText = currentTripNo || 'Current Trip';
-
   const containerEl = document.getElementById('deliveryDrops');
   containerEl.innerHTML = '<div class="card" style="text-align:center;color:#666">Loading drops...</div>';
-
   var todayStr = getTodayString();
-
-  const { data: statusList } = await supabase
-    .from('transactions')
-    .select('*')
-    .eq('driver_name', currentUser.name)
-    .eq('op_date', todayStr);
-
+  const [statusRes, indentRes] = await Promise.all([
+    supabase.from('transactions').select('*').eq('driver_name', currentUser.name).eq('op_date', todayStr),
+    supabase.from('drop_indents').select('drop_name, quantity').limit(10000)
+  ]);
+  const statusList = statusRes.data;
+  var indentSignalMap = {};
+  (indentRes.data || []).forEach(function(ind){
+    var d = (ind.drop_name||'').trim();
+    if(!d) return;
+    indentSignalMap[d] = (indentSignalMap[d]||0) + Number(ind.quantity||0);
+  });
   deliveryStatus = {};
-  (statusList || []).forEach(function(s) {
-    if (s && s.drop_name) deliveryStatus[s.drop_name] = s;
-  });
-
+  (statusList || []).forEach(function(s) { if (s && s.drop_name) deliveryStatus[s.drop_name] = s; });
   var formattedTargetTrip = formatTrip(currentTripNo);
-  var matchingDrops = allDriverRoutes.filter(function(r) {
-    return formatTrip(r.trip_no || 'Trip 1') === formattedTargetTrip;
-  });
-
+  var matchingDrops = allDriverRoutes.filter(function(r) { return formatTrip(r.trip_no || 'Trip 1') === formattedTargetTrip; });
   if (matchingDrops.length === 0) {
     containerEl.innerHTML = '<div class="card" style="text-align:center">No drops assigned to you for trip: ' + escapeHtml(currentTripNo) + '</div>';
     return;
   }
-
   currentDropData = {};
   matchingDrops.forEach(function(r) {
     var dropName = (r.drop || '').trim();
     if (!dropName) return;
     if (!currentDropData[dropName]) currentDropData[dropName] = [];
-    currentDropData[dropName].push({ 
-      route: r.route, 
-      tripNo: r.trip_no, 
-      driver: r.driver, 
-      channel_type: r.channel_type || '',
-      map_link: r.map_link || '',
-      qty: 1 
-    });
+    currentDropData[dropName].push({ route: r.route, tripNo: r.trip_no, driver: r.driver, channel_type: r.channel_type || '', map_link: r.map_link || '', qty: 1 });
   });
-
   var sortedDrops = Object.keys(currentDropData).sort(function(a, b) {
     var aDone = !!deliveryStatus[a];
     var bDone = !!deliveryStatus[b];
@@ -1661,7 +1903,6 @@ async function openDelivery() {
     if (!aDone && bDone) return -1;
     return a.localeCompare(b);
   });
-
   var html = '';
   sortedDrops.forEach(function(dropName) {
     var items = currentDropData[dropName] || [];
@@ -1669,38 +1910,21 @@ async function openDelivery() {
     var txn = deliveryStatus[dropName];
     var isDone = !!txn;
     var safeDrop = escapeHtml(dropName).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-
-    var dropItem = items[0] || {};
-    var navUrl = dropItem.map_link ? dropItem.map_link : 'https://www.google.com/maps/search/' + encodeURIComponent(dropName);
-
     if (isDone) {
-      html += '<div class="card" style="border:1px solid #7CFC00;background:#101d10">';
-      html += '  <div class="dropCardTop">';
-      html += '    <div style="min-width:0;flex:1"><div class="dropTitle" style="color:#7CFC00">✓ ' + escapeHtml(dropName) + '</div><span style="font-size:11px;color:#aaa">' + escapeHtml(route) + '</span></div>';
-      html += '    <div class="badge" style="background:#7CFC00;color:black;font-weight:700">Delivered</div>';
-      html += '  </div>';
-      html += '  <div style="display:flex;gap:8px;margin-top:12px">';
-      html += '    <button class="btnDark" style="flex:1" onclick="openDropDetail(\'' + safeDrop + '\', true)">View Details</button>';
-      html += '    <button class="btnDark" style="width:auto;padding:0 14px" onclick="window.open(\'' + navUrl + '\', \'_blank\')">Navigate</button>';
-      html += '  </div>';
-      html += '</div>';
+      var hasIndentDone = indentSignalMap[dropName] && indentSignalMap[dropName] > 0;
+      var borderColorDone = hasIndentDone ? '#7CFC00' : '#ff4444';
+      html += '<div class="card" style="border:1px solid ' + borderColorDone + ';background:' + (hasIndentDone ? '#101d10' : '#1a1010') + '">';
+      html += '  <div class="dropCardTop"><div style="min-width:0;flex:1"><div class="dropTitle" style="color:' + borderColorDone + '">✓ ' + escapeHtml(dropName) + '</div><span style="font-size:11px;color:#aaa">' + escapeHtml(route) + ' • ' + (hasIndentDone ? 'Indent: ' + indentSignalMap[dropName] : 'No Indent') + '</span></div><div class="badge" style="background:' + borderColorDone + ';color:black;font-weight:700">Delivered</div></div>';
+      html += '  <div style="display:flex;gap:8px;margin-top:12px"><button class="btnDark" style="flex:1" onclick="openDropDetail(\'' + safeDrop + '\', true)">View Details</button><button class="btnDark" style="width:auto;padding:0 14px" onclick="handleNavigateClick(\'' + safeDrop + '\')">Navigate</button></div></div>';
     } else {
-      html += '<div class="card">';
-      html += '  <div class="dropCardTop">';
-      html += '    <div style="min-width:0;flex:1"><div class="dropTitle">' + escapeHtml(dropName) + '</div><span style="font-size:11px;color:#888">' + escapeHtml(route) + '</span></div>';
-      html += '    <div class="badge">Pending</div>';
-      html += '  </div>';
-      html += '  <div style="display:flex;gap:8px;margin-top:12px">';
-      html += '    <button class="btnGreen" style="flex:1" onclick="openDropDetail(\'' + safeDrop + '\', false)">Open</button>';
-      html += '    <button class="btnDark" style="flex:1" onclick="noIndentDrop(\'' + safeDrop + '\')">No Indent</button>';
-      html += '    <button class="btnDark" style="flex:1" onclick="window.open(\'' + navUrl + '\', \'_blank\')">Navigate</button>';
-      html += '  </div>';
-      html += '</div>';
+      var hasIndent = indentSignalMap[dropName] && indentSignalMap[dropName] > 0;
+      var borderColor = hasIndent ? '#7CFC00' : '#ff4444';
+      html += '<div class="card" style="border:1px solid ' + borderColor + '"><div class="dropCardTop"><div style="min-width:0;flex:1"><div class="dropTitle" style="color:' + (hasIndent ? '#fff' : '#ff8888') + '">' + escapeHtml(dropName) + '</div><span style="font-size:11px;color:' + borderColor + '">' + escapeHtml(route) + ' • ' + (hasIndent ? 'Indent: ' + indentSignalMap[dropName] : 'No Indent') + '</span></div><div class="badge" style="background:' + (hasIndent ? '#1a3a1a' : '#3a1a1a') + ';color:' + borderColor + ';border:1px solid ' + borderColor + '">' + (hasIndent ? 'Indent' : 'No Indent') + '</div></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btnGreen" style="flex:1" onclick="openDropDetail(\'' + safeDrop + '\', false)">Open</button><button class="btnDark" style="flex:1" onclick="noIndentDrop(\'' + safeDrop + '\')">No Indent</button><button class="btnDark" style="flex:1" onclick="handleNavigateClick(\'' + safeDrop + '\')">Navigate</button></div></div>';
     }
   });
-
   containerEl.innerHTML = html;
 }
+
 
 async function openDropDetail(dropName, isReadOnly) {
   if (navStack[navStack.length - 1] !== 'dropDetail') navStack.push('dropDetail');
@@ -1789,97 +2013,40 @@ async function renderIndentsList(rawIndents, containerId) {
     aggregatedMap[aggKey].quantity += Number(r.quantity || 0);
   });
   rawIndents = Object.values(aggregatedMap);
-
-  const { data: productsMaster } = await supabase
-    .from('products_master')
-    .select('name, qty_per_tray, product_type, seq_number');
-
+  const { data: productsMaster } = await supabase.from('products_master').select('name, qty_per_tray, product_type, seq_number');
   const masterMap = {};
-  if (productsMaster) {
-    productsMaster.forEach(p => { masterMap[p.name] = p; });
-  }
-
+  if (productsMaster) { productsMaster.forEach(p => { masterMap[p.name] = p; }); }
   const processedData = rawIndents.map(item => {
     const meta = masterMap[item.item_name] || {};
-    return {
-      ...item,
-      product_type: meta.product_type || 'Product',
-      seq_number: meta.seq_number ?? 999,
-      qty_per_tray: meta.qty_per_tray || 0
-    };
+    return { ...item, product_type: meta.product_type || 'Product', seq_number: meta.seq_number ?? 999, qty_per_tray: meta.qty_per_tray || 0 };
   });
-
   processedData.sort((a, b) => a.seq_number - b.seq_number);
-
   const milkItems = processedData.filter(i => i.product_type === 'Milk');
   const productItems = processedData.filter(i => i.product_type !== 'Milk');
-
-  let totalUnits = 0;
-  let totalFullTrays = 0;
-
+  let totalDecimalTrays = 0;
   processedData.forEach(item => {
     const qty = Number(item.quantity || 0);
     const perTray = Number(item.qty_per_tray || 0);
-    totalUnits += qty;
-    if (perTray > 0) {
-      totalFullTrays += Math.floor(qty / perTray);
-    }
+    if (perTray > 0) { totalDecimalTrays += qty / perTray; }
   });
-
+  const expectedTrays = Math.ceil(totalDecimalTrays);
   const container = document.getElementById(containerId);
   container.innerHTML = '';
-
   function generateSectionHTML(title, items) {
     if (items.length === 0) return '';
-    
-    let html = `
-      <div style="margin-top: 15px;">
-        <h3 style="color: #fff; background-color: #333; padding: 6px 12px; margin: 0; font-size: 14px; text-transform: uppercase; text-align: center;">
-          ${title}
-        </h3>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
-          <thead>
-            <tr style="background: #1e1e1e;">
-              <th style="padding: 8px; border: 1px solid #ffffff; color: #aaa; text-align: center;">Product</th>
-              <th style="padding: 8px; border: 1px solid #ffffff; color: #aaa; text-align: center; width: 60px;">Qty</th>
-              <th style="padding: 8px; border: 1px solid #ffffff; color: #aaa; text-align: center; width: 110px;">Tray</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
-
+    let html = `<div style="margin-top: 15px;"><h3 style="color: #fff; background-color: #333; padding: 6px 12px; margin: 0; font-size: 14px; text-transform: uppercase; text-align: center;">${title}</h3><table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;"><thead><tr style="background: #1e1e1e;"><th style="padding: 8px; border: 1px solid #ffffff; color: #aaa; text-align: center;">Product</th><th style="padding: 8px; border: 1px solid #ffffff; color: #aaa; text-align: center; width: 60px;">Qty</th><th style="padding: 8px; border: 1px solid #ffffff; color: #aaa; text-align: center; width: 110px;">Tray</th></tr></thead><tbody>`;
     items.forEach(item => {
       const trayDisplay = formatTrayCapacity(item.quantity, item.qty_per_tray);
-      html += `
-        <tr>
-          <td style="padding: 10px; border: 1px solid #ffffff; color: #fff; font-weight: 600; text-align: center;">${escapeHtml(item.item_name)}</td>
-          <td style="padding: 10px; border: 1px solid #ffffff; color: #00ffcc; font-weight: bold; text-align: center;">${item.quantity}</td>
-          <td style="padding: 10px; border: 1px solid #ffffff; color: #aaa; text-align: center;">${trayDisplay}</td>
-        </tr>
-      `;
+      html += `<tr><td style="padding: 10px; border: 1px solid #ffffff; color: #fff; font-weight: 600; text-align: center;">${escapeHtml(item.item_name)}</td><td style="padding: 10px; border: 1px solid #ffffff; color: #00ffcc; font-weight: bold; text-align: center;">${item.quantity}</td><td style="padding: 10px; border: 1px solid #ffffff; color: #aaa; text-align: center;">${trayDisplay}</td></tr>`;
     });
-
     html += `</tbody></table></div>`;
     return html;
   }
-
-  let summaryHTML = `
-    <div style="display:flex; gap:10px; margin-bottom:12px; text-align:center;">
-      <div style="flex:1; background:#1a1a1a; padding:10px; border-radius:12px; border:1px solid #252525;">
-        <div style="font-size:18px; font-weight:700; color:#7CFC00;">${totalFullTrays}</div>
-        <div style="font-size:10px; color:#888;">FULL TRAYS</div>
-      </div>
-      <div style="flex:1; background:#1a1a1a; padding:10px; border-radius:12px; border:1px solid #252525;">
-        <div style="font-size:18px; font-weight:700; color:#00ffcc;">${totalUnits}</div>
-        <div style="font-size:10px; color:#888;">TOTAL UNITS</div>
-      </div>
-    </div>
-  `;
-
+  let summaryHTML = `<div style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;"><span style="font-size:12px; color:#888; font-weight:700;">EXPECTED TRAYS</span><span style="font-size:24px; font-weight:800; color:#7CFC00;">${expectedTrays}</span></div>`;
   let contentHTML = generateSectionHTML('Milk', milkItems) + generateSectionHTML('Product', productItems);
-
   container.innerHTML = contentHTML ? summaryHTML + contentHTML : '<p style="color: #888; padding: 10px; text-align: center;">No indents found.</p>';
 }
+
 
 async function openVehicleRoutes(isRefresh) {
   if (!isRefresh) { if (navStack[navStack.length - 1] !== 'staffHome') navStack.push('staffHome'); }
@@ -1895,7 +2062,6 @@ async function openVehicleRoutes(isRefresh) {
     var opDate = getOpDateWithCutoff();
     document.getElementById('vrOpDate').innerText = opDate;
 
-    // 1. Fetch indents, master routes, AND today's proofs
     const [indentsRes, masterRes, proofsRes] = await Promise.all([
       supabase.from('route_indents').select('route_name').limit(10000),
       supabase.from('master_routes').select('route, drop, channel_type').eq('op_date', opDate).limit(10000),
@@ -1905,7 +2071,6 @@ async function openVehicleRoutes(isRefresh) {
     if (indentsRes.error) throw indentsRes.error;
     if (masterRes.error) throw masterRes.error;
 
-    // Build proof mapping to check if a route is submitted
     const proofMap = {};
     (proofsRes.data || []).forEach(p => {
       proofMap[p.route_name] = p;
@@ -1962,7 +2127,6 @@ async function openVehicleRoutes(isRefresh) {
       return a.localeCompare(b);
     });
 
-    // 2. Render HTML with Green styling for submitted routes
     let html = '';
     sortedChannels.forEach(ch => {
       const entitiesInChannel = grouped[ch].sort();
@@ -1974,7 +2138,6 @@ async function openVehicleRoutes(isRefresh) {
           const proof = proofMap[ent];
 
           if (proof) {
-            // GREEN CARD (Submitted)
             let dt = new Date(proof.timestamp);
             let timeStr = dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
             
@@ -1986,7 +2149,6 @@ async function openVehicleRoutes(isRefresh) {
             html += '  <div class="tripSub" style="margin-top:6px;color:#aaa">By ' + escapeHtml(proof.submitted_by) + ' at ' + timeStr + '</div>';
             html += '</div>';
           } else {
-            // DEFAULT CARD (Pending)
             html += '<div class="tripCard" onclick="openVehicleRouteDetail(\'' + safeEnt + '\')">';
             html += '  <div class="tripTitle">' + escapeHtml(ent) + '</div>';
             html += '  <div class="tripSub">Tap to view indents</div>';
@@ -2003,7 +2165,7 @@ async function openVehicleRoutes(isRefresh) {
 
   } catch (err) {
     document.getElementById('loader').classList.add('hide');
-    alert("Error loading vehicle routes: " + (err.message || err));
+    showToast("Error loading vehicle routes: " + (err.message || err), true);
   }
 }
 
@@ -2016,7 +2178,6 @@ async function openVehicleRouteDetail(routeName) {
   document.getElementById('vrDetailTitle').innerText = routeName;
   document.getElementById('vrDetailDate').innerText = opDate;
 
-  // HARD RESET - this is the main fix
   vrPhotoBase64 = "";
   const input = document.getElementById('vrPhotoInput');
   if(input) input.value = "";
@@ -2109,11 +2270,9 @@ async function openDriverDashboard(isRefresh) {
     var crates = cratesRes.data || [];
     var rtps = rtpRes.data || [];
 
-    // Only drivers with routes assigned today
     var assignedDriverNames = [...new Set(routes.map(r => r.driver).filter(Boolean))];
     var drivers = assignedDriverNames.map(name => driverMapInfo[name] || {name:name, mobile_number:'', role:'driver'}).sort((a,b)=>a.name.localeCompare(b.name));
 
-    // maps
     var cratesMap = {};
     crates.forEach(c => {
       var key = c.driver_name + '||' + formatTrip(c.trip_no || 'Trip 1');
@@ -2130,7 +2289,7 @@ async function openDriverDashboard(isRefresh) {
 
     var txnByDriver = {};
     var txnByDriverTrip = {};
-    var txnByDropKey = {}; // driver||trip||drop -> txn
+    var txnByDropKey = {}; 
     var lastTxnByDriver = {};
     txns.forEach(t => {
       if (!txnByDriver[t.driver_name]) txnByDriver[t.driver_name] = [];
@@ -2197,7 +2356,6 @@ async function openDriverDashboard(isRefresh) {
         statusClass = 'orange';
       }
 
-      // Trip table
       var tableRows = '';
       trips.forEach(trip => {
         var tripLabel = trip.replace('Trip ','T');
@@ -2212,7 +2370,6 @@ async function openDriverDashboard(isRefresh) {
         tableRows += '<tr><td>' + escapeHtml(tripLabel) + '</td><td>' + ld + '</td><td class="yellow">' + dr + '</td><td class="yellow">' + pk + '</td><td class="red">' + rm + '</td><td>' + doneStops + '/' + totalStops + '</td></tr>';
       });
 
-      // Expandable trip-wise drop details
       var expandableHtml = '';
       trips.forEach(trip => {
         var tripDrops = tripGroups[trip] || [];
@@ -2223,7 +2380,6 @@ async function openDriverDashboard(isRefresh) {
           if (txn) {
             var tTime = new Date(txn.created_at||txn.timestamp).toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12:false});
             
-            // Generate photo buttons or thumbnails if image URLs exist
             var photoLinksHtml = '';
             if (txn.image1_url || txn.image2_url) {
               photoLinksHtml += '<div style="display:flex;gap:6px;margin-top:6px;">';
@@ -2244,7 +2400,6 @@ async function openDriverDashboard(isRefresh) {
         expandableHtml += '</div>';
       });
 
-      // RTP card for plant drivers
       if (isPlantDriver) {
         var rtpInfo = rtpMap[drv.name];
         if (rtpInfo) {
@@ -2284,7 +2439,7 @@ function toggleDriverExpand(id) {
 
 function callDriver(mobile) {
 
-  if (!mobile || mobile.trim()==='') { alert('No mobile number for this driver'); return; }
+  if (!mobile || mobile.trim()==='') { showToast('No mobile number for this driver', true); return; }
   window.open('tel:' + mobile.trim(), '_self');
 }
 
@@ -2366,7 +2521,7 @@ async function openStockTransactions(isRefresh) {
 
   } catch (err) {
     document.getElementById('loader').classList.add('hide');
-    alert("Error loading stock transactions: " + (err.message || err));
+    showToast("Error loading stock transactions: " + (err.message || err), true);
   }
 }
 
@@ -2431,7 +2586,7 @@ async function submitStockTransaction() {
   });
 
   if (payload.length === 0) {
-    alert("Please enter a quantity for at least one product.");
+    showToast("Please enter a quantity for at least one product.", true);
     return;
   }
 
@@ -2440,12 +2595,11 @@ async function submitStockTransaction() {
   btn.innerText = 'Submitting...';
 
   try {
-    await supabase.from('stock_transactions')
-      .delete()
-      .eq('op_date', opDate)
-      .eq('transaction_type', currentSelectedStType);
-
-    const { error } = await supabase.from('stock_transactions').insert(payload);
+    // Upsert automatically inserts new rows or overwrites existing ones based on the unique constraint
+    const { error } = await supabase.from('stock_transactions').upsert(payload, { 
+      onConflict: 'op_date, transaction_type, product' 
+    });
+    
     if (error) throw error;
 
     btn.innerText = '✓ Saved Successfully';
@@ -2458,7 +2612,7 @@ async function submitStockTransaction() {
   } catch (err) {
     btn.disabled = false;
     btn.innerText = 'Submit Stock Transaction';
-    alert("Save failed: " + (err.message || err));
+    showToast("Save failed: " + (err.message || err), true);
   }
 }
 
@@ -2480,7 +2634,6 @@ function handleVrPhotoSelect(input) {
 
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      // Watermark Text
       var ist = getISTDate();
       var pad = n => n < 10 ? '0'+n : ''+n;
       var timeStr = pad(ist.getDate()) + '/' + pad(ist.getMonth()+1) + '/' + ist.getFullYear() + ' ' + pad(ist.getHours()) + ':' + pad(ist.getMinutes()) + ':' + pad(ist.getSeconds()) + ' IST';
@@ -2499,7 +2652,6 @@ function handleVrPhotoSelect(input) {
       
       vrPhotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
       
-      // Update Capture UI
       document.getElementById('vrPhotoBtn').innerText = "✓ Retake Photo";
       document.getElementById('vrPhotoPreview').classList.remove('hide');
       document.getElementById('vrPhotoSubmitBtn').style.display = 'block';
@@ -2510,7 +2662,7 @@ function handleVrPhotoSelect(input) {
 }
 
 async function submitVrPhoto() {
-  if (!vrPhotoBase64) { alert("Capture photo first"); return; }
+  if (!vrPhotoBase64) { showToast("Capture photo first", true); return; }
 
   var btn = document.getElementById('vrPhotoSubmitBtn');
   var statusElem = document.getElementById('vrPhotoStatus');
@@ -2536,7 +2688,6 @@ async function submitVrPhoto() {
 
     var messageText = "📦 Vehicle Route Loaded\nDate: " + dateStr + "\nRoute: " + routeName + " (" + mobile + ")\nTime: " + timeStr + "\n" + driveUrl;
 
-    // don't block if chat fails
     try {
       await fetch(G_CHAT_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: messageText }) });
     } catch(chatErr){ console.warn("Chat failed", chatErr); }
@@ -2544,7 +2695,6 @@ async function submitVrPhoto() {
     btn.innerText = 'Saving Record...';
     var insertPayload = { op_date: dateStr, route_name: routeName, submitted_by: staffName, timestamp: getISTTimestamp(), drive_url: driveUrl };
 
-    // THIS FIXES THE HANG
     const { error } = await supabase.from('route_loaded_proofs').upsert(insertPayload, { onConflict: 'route_name,op_date' });
     if (error) throw error;
 
@@ -2578,7 +2728,6 @@ function resetVrPhotoUI(){
 async function openDropWiseIndents(isRefresh) {
   if (!isRefresh) { if (navStack[navStack.length - 1] !== 'staffHome') navStack.push('staffHome'); }
   
-  // Hide other pages
   document.getElementById('staffHome').classList.add('hide');
   document.getElementById('routeAssignPage').classList.add('hide');
   document.getElementById('loadCratesPage').classList.add('hide');
@@ -2588,7 +2737,6 @@ async function openDropWiseIndents(isRefresh) {
   document.getElementById('stockTxnDetailPage').classList.add('hide');
   document.getElementById('driverDashboardPage').classList.add('hide');
   
-  // Show new page
   document.getElementById('dropWiseIndentPage').classList.remove('hide');
   document.getElementById('dwOpDate').innerText = getOpDateWithCutoff();
   document.getElementById('dropWiseContent').style.display = 'none';
@@ -2596,11 +2744,9 @@ async function openDropWiseIndents(isRefresh) {
   document.getElementById('loader').classList.remove('hide');
   
   try {
-    // Fetch unique drop names from drop_indents
     const { data, error } = await supabase.from('drop_indents').select('drop_name').limit(10000);
     if (error) throw error;
     
-    // Deduplicate and sort alphabetically
     const uniqueDrops = [...new Set((data || []).map(d => (d.drop_name || '').trim()).filter(Boolean))].sort();
     
     let html = '<option value="">-- Select Drop --</option>';
@@ -2612,7 +2758,7 @@ async function openDropWiseIndents(isRefresh) {
     document.getElementById('loader').classList.add('hide');
   } catch (err) {
     document.getElementById('loader').classList.add('hide');
-    alert("Error loading drops: " + (err.message || err));
+    showToast("Error loading drops: " + (err.message || err), true);
   }
 }
 
@@ -2630,7 +2776,6 @@ async function loadDropWiseData() {
   document.getElementById('loader').classList.remove('hide');
   
   try {
-    // Fetch the specific indents for the selected drop
     const { data, error } = await supabase
       .from('drop_indents')
       .select('*')
@@ -2639,13 +2784,203 @@ async function loadDropWiseData() {
       
     if (error) throw error;
     
-    // Pass data into your existing table formatter
     await renderIndentsList(data || [], 'dropWiseContent');
     document.getElementById('loader').classList.add('hide');
   } catch (err) {
     document.getElementById('loader').classList.add('hide');
     container.innerHTML = '<div style="color:#ff6b6b;text-align:center">Error loading data.</div>';
     console.error(err);
+  }
+}
+function showCustomConfirm(title, message) {
+  return new Promise((resolve) => {
+    var overlay = document.getElementById('customConfirmOverlay');
+    document.getElementById('customConfirmTitle').innerText = title;
+    document.getElementById('customConfirmMessage').innerText = message;
+    
+    var okBtn = document.getElementById('customConfirmOkBtn');
+    var cancelBtn = document.getElementById('customConfirmCancelBtn');
+    
+    var cleanup = function() {
+      overlay.classList.add('hide');
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+    };
+
+    okBtn.onclick = function() { cleanup(); resolve(true); };
+    cancelBtn.onclick = function() { cleanup(); resolve(false); };
+    
+    overlay.classList.remove('hide');
+  });
+}
+// --- EDIT TRANSACTION LOGIC ---
+
+function openEditTransaction(isRefresh) {
+  if (!isRefresh) { if (navStack[navStack.length - 1] !== 'staffHome') navStack.push('staffHome'); }
+  
+  // Hide other pages
+  document.getElementById('staffHome').classList.add('hide');
+  document.getElementById('editTransactionPage').classList.remove('hide');
+  
+  // Reset UI
+  var opDate = getOpDateWithCutoff();
+  document.getElementById('editTxnDateBadge').innerText = opDate;
+  document.getElementById('editTxnDate').value = opDate;
+  document.getElementById('editTxnFormCard').classList.add('hide');
+  document.getElementById('editTxnMsg').innerText = '';
+  
+  loadTxnDropsForDate();
+}
+
+async function loadTxnDropsForDate() {
+  var dateVal = document.getElementById('editTxnDate').value;
+  var dropSelect = document.getElementById('editTxnDrop');
+  
+  if (!dateVal) return;
+  
+  document.getElementById('loader').classList.remove('hide');
+  dropSelect.innerHTML = '<option value="">Loading drops...</option>';
+  document.getElementById('editTxnFormCard').classList.add('hide');
+  document.getElementById('editTxnMsg').innerText = '';
+
+  try {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('drop_name')
+      .eq('op_date', dateVal)
+      .limit(10000);
+
+    document.getElementById('loader').classList.add('hide');
+    if (error) throw error;
+
+    var drops = [...new Set((data || []).map(d => d.drop_name))].sort();
+    
+    if (drops.length === 0) {
+      dropSelect.innerHTML = '<option value="">No transactions found for this date</option>';
+      return;
+    }
+
+    var html = '<option value="">-- Select Drop --</option>';
+    drops.forEach(d => {
+      html += '<option value="' + escapeHtml(d) + '">' + escapeHtml(d) + '</option>';
+    });
+    dropSelect.innerHTML = html;
+
+  } catch (err) {
+    document.getElementById('loader').classList.add('hide');
+    showToast("Error loading drops: " + err.message, true);
+  }
+}
+
+async function loadTxnDetailsForDrop() {
+  var dateVal = document.getElementById('editTxnDate').value;
+  var dropVal = document.getElementById('editTxnDrop').value;
+  
+  if (!dropVal) {
+    document.getElementById('editTxnFormCard').classList.add('hide');
+    return;
+  }
+
+  document.getElementById('loader').classList.remove('hide');
+  document.getElementById('editTxnMsg').innerText = '';
+
+  try {
+    // Fetch the most recent transaction for that date and drop
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('op_date', dateVal)
+      .eq('drop_name', dropVal)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    document.getElementById('loader').classList.add('hide');
+    if (error) throw error;
+
+    if (data) {
+      document.getElementById('editTxnFormCard').classList.remove('hide');
+      document.getElementById('editPrev').value = data.prev_holding || 0;
+      document.getElementById('editDrop').value = data.dropped_today || 0;
+      document.getElementById('editPick').value = data.picked_today || 0;
+      document.getElementById('editHolding').value = data.holding_today || 0;
+      
+      calcEditTxnCrates(); // Trigger auto-calculations
+    } else {
+      showToast("Transaction data not found.", true);
+    }
+  } catch (err) {
+    document.getElementById('loader').classList.add('hide');
+    showToast("Error loading details: " + err.message, true);
+  }
+}
+
+function calcEditTxnCrates() {
+  var prev = Number(document.getElementById('editPrev').value) || 0;
+  var dropped = Number(document.getElementById('editDrop').value) || 0;
+  var picked = Number(document.getElementById('editPick').value) || 0;
+  var holding = Number(document.getElementById('editHolding').value) || 0;
+
+  var expected = prev + dropped - picked;
+  var variance = expected - holding;
+
+  var expElem = document.getElementById('editExpected');
+  var varElem = document.getElementById('editVariance');
+
+  expElem.value = expected;
+  varElem.value = variance;
+
+  if (variance !== 0) {
+    varElem.style.color = '#ff6b6b';
+  } else {
+    varElem.style.color = '#7CFC00';
+  }
+}
+
+async function submitEditTransaction() {
+  var dateVal = document.getElementById('editTxnDate').value;
+  var dropVal = document.getElementById('editTxnDrop').value;
+  
+  var prev = Number(document.getElementById('editPrev').value) || 0;
+  var dropped = Number(document.getElementById('editDrop').value) || 0;
+  var picked = Number(document.getElementById('editPick').value) || 0;
+  var holding = Number(document.getElementById('editHolding').value) || 0;
+  var expected = Number(document.getElementById('editExpected').value) || 0;
+  var variance = Number(document.getElementById('editVariance').value) || 0;
+
+  var btn = document.getElementById('editTxnSubmitBtn');
+  btn.disabled = true;
+  btn.innerText = 'Updating...';
+
+  try {
+    const { error } = await supabase
+      .from('transactions')
+      .update({
+        prev_holding: prev,
+        dropped_today: dropped,
+        picked_today: picked,
+        holding_today: holding,
+        expected_trays: expected,
+        variance: variance
+      })
+      .eq('op_date', dateVal)
+      .eq('drop_name', dropVal);
+
+    if (error) throw error;
+
+    btn.disabled = false;
+    btn.innerText = 'Update Transaction';
+    document.getElementById('editTxnMsg').innerText = '✓ Transaction updated successfully';
+    
+    if (navigator.vibrate) navigator.vibrate(50);
+    
+    // Clear success message after 3 seconds
+    setTimeout(() => { document.getElementById('editTxnMsg').innerText = ''; }, 3000);
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerText = 'Update Transaction';
+    showToast("Failed to update: " + err.message, true);
   }
 }
 </script>
