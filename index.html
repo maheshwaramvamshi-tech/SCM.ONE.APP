@@ -6,7 +6,6 @@
 
 <!-- Supabase JS CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
   const SUPABASE_URL = 'https://csxfpltxtgrzgjlnkgec.supabase.co'; 
   // WARNING: Anon keys and webhooks should ideally be secured behind a server proxy in production.
@@ -1894,10 +1893,19 @@ async function openDelivery() {
   const containerEl = document.getElementById('deliveryDrops');
   containerEl.innerHTML = '<div class="card" style="text-align:center;color:#666">Loading drops...</div>';
   var todayStr = getTodayString();
-  const [statusRes, indentRes] = await Promise.all([
+  
+  // FIX: Added routesRes to fetch the absolute latest master_routes directly from Supabase
+  const [statusRes, indentRes, routesRes] = await Promise.all([
     supabase.from('transactions').select('*').eq('driver_name', currentUser.name).eq('op_date', todayStr),
-    supabase.from('drop_indents').select('drop_name, quantity').limit(10000)
+    supabase.from('drop_indents').select('drop_name, quantity').limit(10000),
+    supabase.from('master_routes').select('*').eq('driver', currentUser.name).eq('op_date', todayStr).limit(10000)
   ]);
+  
+  // FIX: Update the global memory instantly so the sequence is fresh
+  if (routesRes && routesRes.data) {
+    allDriverRoutes = routesRes.data;
+  }
+  
   const statusList = statusRes.data;
   var indentSignalMap = {};
   (indentRes.data || []).forEach(function(ind){
@@ -1905,22 +1913,22 @@ async function openDelivery() {
     if(!d) return;
     indentSignalMap[d] = (indentSignalMap[d]||0) + Number(ind.quantity||0);
   });
+  
   deliveryStatus = {};
   (statusList || []).forEach(function(s) { if (s && s.drop_name) deliveryStatus[s.drop_name] = s; });
   var formattedTargetTrip = formatTrip(currentTripNo);
   var matchingDrops = allDriverRoutes.filter(function(r) { return formatTrip(r.trip_no || 'Trip 1') === formattedTargetTrip; });
+  
   if (matchingDrops.length === 0) {
     containerEl.innerHTML = '<div class="card" style="text-align:center">No drops assigned to you for trip: ' + escapeHtml(currentTripNo) + '</div>';
     return;
   }
-  // ... (keep the existing data fetching code at the top of openDelivery)
-
+  
   currentDropData = {};
   matchingDrops.forEach(function(r) {
     var dropName = (r.drop || '').trim();
     if (!dropName) return;
     if (!currentDropData[dropName]) currentDropData[dropName] = [];
-    // Added sequence_order reading here
     currentDropData[dropName].push({ 
       route: r.route, tripNo: r.trip_no, driver: r.driver, 
       channel_type: r.channel_type || '', map_link: r.map_link || '', 
@@ -1928,7 +1936,6 @@ async function openDelivery() {
     });
   });
 
-  // Updated Sorting Logic to prioritize sequence_order
   var sortedDrops = Object.keys(currentDropData).sort(function(a, b) {
     var aDone = !!deliveryStatus[a];
     var bDone = !!deliveryStatus[b];
@@ -1950,76 +1957,20 @@ async function openDelivery() {
     var isDone = !!txn;
     var safeDrop = escapeHtml(dropName).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     
-    // We added class "drag-card" and data-dropname attributes for SortableJS to read
     if (isDone) {
       var hasIndentDone = indentSignalMap[dropName] && indentSignalMap[dropName] > 0;
       var borderColorDone = hasIndentDone ? '#7CFC00' : '#ff4444';
-      html += '<div class="card drag-card" data-dropname="' + escapeHtml(dropName) + '" style="border:1px solid ' + borderColorDone + ';background:' + (hasIndentDone ? '#101d10' : '#1a1010') + '">';
+      html += '<div class="card" style="border:1px solid ' + borderColorDone + ';background:' + (hasIndentDone ? '#101d10' : '#1a1010') + '">';
       html += '  <div class="dropCardTop"><div style="min-width:0;flex:1"><div class="dropTitle" style="color:' + borderColorDone + '">✓ ' + escapeHtml(dropName) + '</div><span style="font-size:11px;color:#aaa">' + escapeHtml(route) + ' • ' + (hasIndentDone ? 'Indent: ' + indentSignalMap[dropName] : 'No Indent') + '</span></div><div class="badge" style="background:' + borderColorDone + ';color:black;font-weight:700">Delivered</div></div>';
       html += '  <div style="display:flex;gap:8px;margin-top:12px"><button class="btnDark" style="flex:1" onclick="openDropDetail(\'' + safeDrop + '\', true)">View Details</button><button class="btnDark" style="width:auto;padding:0 14px" onclick="handleNavigateClick(\'' + safeDrop + '\')">Navigate</button></div></div>';
     } else {
       var hasIndent = indentSignalMap[dropName] && indentSignalMap[dropName] > 0;
       var borderColor = hasIndent ? '#7CFC00' : '#ff4444';
-      html += '<div class="card drag-card" data-dropname="' + escapeHtml(dropName) + '" style="border:1px solid ' + borderColor + '"><div class="dropCardTop"><div style="min-width:0;flex:1"><div class="dropTitle" style="color:' + (hasIndent ? '#fff' : '#ff8888') + '">' + escapeHtml(dropName) + '</div><span style="font-size:11px;color:' + borderColor + '">' + escapeHtml(route) + ' • ' + (hasIndent ? 'Indent: ' + indentSignalMap[dropName] : 'No Indent') + '</span></div><div class="badge" style="background:' + (hasIndent ? '#1a3a1a' : '#3a1a1a') + ';color:' + borderColor + ';border:1px solid ' + borderColor + '">' + (hasIndent ? 'Indent' : 'No Indent') + '</div></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btnGreen" style="flex:1" onclick="openDropDetail(\'' + safeDrop + '\', false)">Open</button><button class="btnDark" style="flex:1" onclick="noIndentDrop(\'' + safeDrop + '\')">No Indent</button><button class="btnDark" style="flex:1" onclick="handleNavigateClick(\'' + safeDrop + '\')">Navigate</button></div></div>';
+      html += '<div class="card" style="border:1px solid ' + borderColor + '"><div class="dropCardTop"><div style="min-width:0;flex:1"><div class="dropTitle" style="color:' + (hasIndent ? '#fff' : '#ff8888') + '">' + escapeHtml(dropName) + '</div><span style="font-size:11px;color:' + borderColor + '">' + escapeHtml(route) + ' • ' + (hasIndent ? 'Indent: ' + indentSignalMap[dropName] : 'No Indent') + '</span></div><div class="badge" style="background:' + (hasIndent ? '#1a3a1a' : '#3a1a1a') + ';color:' + borderColor + ';border:1px solid ' + borderColor + '">' + (hasIndent ? 'Indent' : 'No Indent') + '</div></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btnGreen" style="flex:1" onclick="openDropDetail(\'' + safeDrop + '\', false)">Open</button><button class="btnDark" style="flex:1" onclick="noIndentDrop(\'' + safeDrop + '\')">No Indent</button><button class="btnDark" style="flex:1" onclick="handleNavigateClick(\'' + safeDrop + '\')">Navigate</button></div></div>';
     }
   });
+  
   containerEl.innerHTML = html;
-
-  // Initialize SortableJS at the end of the function
-  // Initialize SortableJS and destroy old instances to prevent duplicate bugs
-  var el = document.getElementById('deliveryDrops');
-  if (window.deliverySortable) {
-    window.deliverySortable.destroy();
-  }
-  if (el) {
-    window.deliverySortable = Sortable.create(el, {
-      animation: 150,
-      delay: 200, 
-      delayOnTouchOnly: true,
-      onEnd: async function (evt) {
-        var cards = el.querySelectorAll('.drag-card');
-        var updatePromises = [];
-        var opDate = getTodayString();
-        
-        cards.forEach((card, index) => {
-          var dropName = card.getAttribute('data-dropname');
-          if (dropName) {
-            // Update immediate local state for ALL items in this drop
-            if (currentDropData[dropName]) {
-              currentDropData[dropName].forEach(function(item) {
-                item.sequence_order = index;
-              });
-            }
-            
-            // FIX: Use filter (not find) to update ALL route rows associated with this drop in global memory
-            var targetTrip = formatTrip(currentTripNo || 'Trip 1');
-            var globalDrops = allDriverRoutes.filter(function(r) {
-              return r.drop === dropName && formatTrip(r.trip_no || 'Trip 1') === targetTrip;
-            });
-            globalDrops.forEach(function(gd) {
-              gd.sequence_order = index;
-            });
-            
-            // Push update to Supabase
-            updatePromises.push(
-              supabase.from('master_routes')
-                .update({ sequence_order: index })
-                .eq('drop', dropName)
-                .eq('driver', currentUser.name)
-                .eq('op_date', opDate)
-            );
-          }
-        });
-
-        try {
-          await Promise.all(updatePromises);
-          if (navigator.vibrate) navigator.vibrate(50);
-        } catch (e) {
-          showToast('Failed to save order: ' + e.message, true);
-        }
-      }
-    });
-  }
 }
 
 
