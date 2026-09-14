@@ -675,9 +675,11 @@ document.addEventListener('visibilitychange', function(){
     console.log('App hidden - pausing auto refresh');
   } else {
     console.log('App visible - triggering refresh');
-    if (currentUser) {
+    if (currentUser && !isCapturingPhoto) {
       setTimeout(function(){ softRefresh(true); }, 800);
     }
+    // Reset the flag after returning
+    isCapturingPhoto = false; 
   }
 });
 
